@@ -204,75 +204,43 @@
         
         CGRect piece = self.originalPieceView.frame;
         
-        if ([self pixelColorInImage:[self.levelView image] atX:piece.origin.x atY:piece.origin.y] == [UIColor blueColor]
-            || [self pixelColorInImage:[self.levelView image] atX:piece.origin.x + piece.size.width atY:piece.origin.y + piece.size.height])
-        {
-            NSLog(@"HIT WATER");
-            
-            if (!self.animationFlag)
-            {
-                self.animationFlag = YES;
+        [self checkBoundaries:piece];
         
-                [UIImageView animateWithDuration:2.0 animations:^(void)
-                 {
-                     self.originalPieceView.alpha = 0.0;
-                 }
-                                  completion:^(BOOL completion)
-                 {
-                     [self.originalPieceView removeFromSuperview];
-                 
-                     CGFloat newX;
-                     CGFloat newY;
-                     
-                     newX = [[self loadPiece:@"X"] floatValue];
-                     newY = [[self loadPiece:@"Y"] floatValue];
-                     
-                     [self createPieceX:&newX Y:&newY];
-                     
-                     self.animationFlag = NO;
-                 }];
-            }
-        }
-        
-        if (pan.state == UIGestureRecognizerStateEnded)
-        {
-            if (CGRectIntersectsRect(self.originalPieceView.frame, self.homeView.frame))
-            {
-                if (!self.animationFlag)
-                {
-                    self.animationFlag = YES;
-                
-                    [UIImageView animateWithDuration:2.0 animations:^(void)
-                     {
-                         self.originalPieceView.alpha = 0.0;
-                     }
-                                          completion:^(BOOL completion)
-                     {
-                         [self.originalPieceView removeFromSuperview];
-                         
-                         UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You beat level %d", self.level] preferredStyle:UIAlertControllerStyleAlert];
-                         
-                         [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
-                         {
-                             [self closeAlertview];
-                         }]];
-                         
-                         [self presentViewController:alertController animated:YES completion:nil];
-                     }];
-                }
-            }
-        }
+        [self checkHome:pan];
     }
-    
-    
 }
 
--(void)closeAlertview
+- (void) checkBoundaries : (CGRect) piece
 {
-    [self dismissViewControllerAnimated:YES completion:nil];
-    self.level++;
-    [self createLevel:self.levels level:self.level];
-    _animationFlag = NO;
+    if ([self pixelColorInImage:[self.levelView image] atX:piece.origin.x atY:piece.origin.y] == [UIColor blueColor]
+        || [self pixelColorInImage:[self.levelView image] atX:piece.origin.x + piece.size.width atY:piece.origin.y + piece.size.height])
+    {
+        NSLog(@"HIT WATER");
+        
+        if (!self.animationFlag)
+        {
+            self.animationFlag = YES;
+            
+            [UIImageView animateWithDuration:2.0 animations:^(void)
+             {
+                 self.originalPieceView.alpha = 0.0;
+             }
+                                  completion:^(BOOL completion)
+             {
+                 [self.originalPieceView removeFromSuperview];
+                 
+                 CGFloat newX;
+                 CGFloat newY;
+                 
+                 newX = [[self loadPiece:@"X"] floatValue];
+                 newY = [[self loadPiece:@"Y"] floatValue];
+                 
+                 [self createPieceX:&newX Y:&newY];
+                 
+                 self.animationFlag = NO;
+             }];
+        }
+    }
 }
 
 - (UIColor *)pixelColorInImage: (UIImage*) mazeImage atX:(int)x atY:(int)y
@@ -314,6 +282,46 @@
     }
     
     return boundaries;
+}
+
+- (void) checkHome : (UIPanGestureRecognizer *) pan
+{
+    if (pan.state == UIGestureRecognizerStateEnded)
+    {
+        if (CGRectIntersectsRect(self.originalPieceView.frame, self.homeView.frame))
+        {
+            if (!self.animationFlag)
+            {
+                self.animationFlag = YES;
+                
+                [UIImageView animateWithDuration:2.0 animations:^(void)
+                 {
+                     self.originalPieceView.alpha = 0.0;
+                 }
+                                      completion:^(BOOL completion)
+                 {
+                     [self.originalPieceView removeFromSuperview];
+                     
+                     UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You beat level %d", self.level + 1] preferredStyle:UIAlertControllerStyleAlert];
+                     
+                     [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
+                                                 {
+                                                     [self closeAlertview];
+                                                 }]];
+                     
+                     [self presentViewController:alertController animated:YES completion:nil];
+                 }];
+            }
+        }
+    }
+}
+
+-(void)closeAlertview
+{
+    [self dismissViewControllerAnimated:YES completion:nil];
+    self.level++;
+    [self createLevel:self.levels level:self.level];
+    _animationFlag = NO;
 }
 
 @end
