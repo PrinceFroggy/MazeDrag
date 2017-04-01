@@ -239,6 +239,8 @@
                      {
                          [self.originalPieceView removeFromSuperview];
                      
+                         //ADD ALERT CONGRATULATIONS YOU BEAT LEVEL (level)
+                         
                          [self createLevel:_levels level:1];
                      
                          _animationFlag = NO;
