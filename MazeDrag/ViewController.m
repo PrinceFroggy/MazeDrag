@@ -166,8 +166,13 @@
     [self.view addConstraint:pieceX];
     [self.view addConstraint:pieceY];
     
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapPiece:)];
+    tap.numberOfTapsRequired = 1;
+    [self.originalPieceView addGestureRecognizer:tap];
+    
     UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panPiece:)];
     [self.originalPieceView addGestureRecognizer:pan];
+    
     self.originalPieceView.userInteractionEnabled = YES;
 }
 
@@ -192,7 +197,25 @@
     [super didReceiveMemoryWarning];
 }
 
-- (void)panPiece:(UIPanGestureRecognizer *)pan
+- (void) tapPiece : (UITapGestureRecognizer *) tap
+{
+    CGRect rect = [self.originalPieceView frame];
+    
+    if ([self.originalPieceView frame].size.height == 30)
+    {
+        rect.size.width = 23.0f;
+        rect.size.height = 22.0f;
+    }
+    else
+    {
+        rect.size.width = 31.0f;
+        rect.size.height = 30.0f;
+    }
+    
+    [self.originalPieceView setFrame:rect];
+}
+
+- (void) panPiece : (UIPanGestureRecognizer *)pan
 {
     if (!self.animationFlag)
     {
@@ -215,8 +238,6 @@
     if ([self pixelColorInImage:[self.levelView image] atX:piece.origin.x atY:piece.origin.y] == [UIColor blueColor]
         || [self pixelColorInImage:[self.levelView image] atX:piece.origin.x + piece.size.width atY:piece.origin.y + piece.size.height])
     {
-        NSLog(@"HIT WATER");
-        
         if (!self.animationFlag)
         {
             self.animationFlag = YES;
@@ -261,7 +282,7 @@
     CGContextDrawImage(context, CGRectMake(0, 0, width, height), imageRef);
     CGContextRelease(context);
     
-    int index = 4*((width*round(y))+round(x));
+    int index = 4 * ( (width * round(y) ) + round(x) );
     
     int R = rawData[index];
     
