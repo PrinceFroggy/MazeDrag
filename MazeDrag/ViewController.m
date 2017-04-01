@@ -30,7 +30,7 @@
     [super viewDidLoad];
     
     _level0 = @{ @"name" : @"level_0", @"homeX" : @140, @"homeY" : @-10, @"pieceX" : @-140, @"pieceY" : @-10};
-    _level1 = @{ @"name" : @"level_1", @"homeX" : @140, @"homeY" : @-10, @"pieceX" : @-140, @"pieceY" : @-10};
+    _level1 = @{ @"name" : @"level_1", @"homeX" : @75, @"homeY" : @-195, @"pieceX" : @-147, @"pieceY" : @295};
     _levels = [[NSDictionary alloc] initWithObjectsAndKeys:_level0, @"0", _level1, @"1", nil];
     
     _level = 0;
@@ -171,6 +171,22 @@
     self.originalPieceView.userInteractionEnabled = YES;
 }
 
+- (NSNumber *) loadPiece : (NSString *) XY
+{
+    NSNumber *coordinate;
+    
+    if ([XY isEqualToString:@"X"])
+    {
+        coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"pieceX"]];
+    }
+    else
+    {
+        coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"pieceY"]];
+    }
+    
+    return coordinate;
+}
+
 - (void)didReceiveMemoryWarning
 {
     [super didReceiveMemoryWarning];
@@ -204,20 +220,15 @@
                                   completion:^(BOOL completion)
                  {
                      [self.originalPieceView removeFromSuperview];
-             
-                     NSNumber *x;
+                 
                      CGFloat newX;
-                     NSNumber *y;
                      CGFloat newY;
-             
-                     x = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"pieceX"]];
-                     newX = [x floatValue];
-             
-                     y = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"pieceY"]];
-                     newY = [y floatValue];
+                     
+                     newX = [[self loadPiece:@"X"] floatValue];
+                     newY = [[self loadPiece:@"Y"] floatValue];
                      
                      [self createPieceX:&newX Y:&newY];
-                 
+                     
                      self.animationFlag = NO;
                  }];
             }
