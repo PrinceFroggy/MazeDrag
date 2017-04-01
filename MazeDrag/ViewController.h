@@ -10,7 +10,5 @@
 
 @interface ViewController : UIViewController
 
-- (void) createLevel : (NSDictionary *) levelDict level: (int) levelNumber;
-
 @end
 

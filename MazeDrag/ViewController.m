@@ -256,6 +256,7 @@
     
     switch (R)
     {
+            // The numbers below are possible color's of the water tile
         case 36:
         case 37:
         case 38:
