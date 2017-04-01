@@ -30,7 +30,8 @@
     [super viewDidLoad];
     
     _level0 = @{ @"name" : @"level_0", @"homeX" : @140, @"homeY" : @-10, @"pieceX" : @-140, @"pieceY" : @-10};
-    _levels = [[NSDictionary alloc] initWithObjectsAndKeys:_level0, @"0", nil];
+    _level1 = @{ @"name" : @"level_1", @"homeX" : @140, @"homeY" : @-10, @"pieceX" : @-140, @"pieceY" : @-10};
+    _levels = [[NSDictionary alloc] initWithObjectsAndKeys:_level0, @"0", _level1, @"1", nil];
     
     _level = 0;
     
@@ -219,6 +220,30 @@
                  
                      _animationFlag = NO;
                  }];
+            }
+        }
+        
+        if (pan.state == UIGestureRecognizerStateEnded)
+        {
+            if (CGRectIntersectsRect(self.originalPieceView.frame, self.homeView.frame))
+            {
+                if (!_animationFlag)
+                {
+                    _animationFlag = YES;
+                
+                    [UIImageView animateWithDuration:2.0 animations:^(void)
+                     {
+                         self.originalPieceView.alpha = 0.0;
+                     }
+                                          completion:^(BOOL completion)
+                     {
+                         [self.originalPieceView removeFromSuperview];
+                     
+                         [self createLevel:_levels level:1];
+                     
+                         _animationFlag = NO;
+                     }];
+                }
             }
         }
     }
