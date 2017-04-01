@@ -178,7 +178,7 @@
 
 - (void)panPiece:(UIPanGestureRecognizer *)pan
 {
-    if (!_animationFlag)
+    if (!self.animationFlag)
     {
         if (pan.state == UIGestureRecognizerStateChanged)
         {
@@ -193,10 +193,10 @@
         {
             NSLog(@"HIT WATER");
             
-            if (!_animationFlag)
+            if (!self.animationFlag)
             {
-                _animationFlag = YES;
-            
+                self.animationFlag = YES;
+        
                 [UIImageView animateWithDuration:2.0 animations:^(void)
                  {
                      self.originalPieceView.alpha = 0.0;
@@ -210,15 +210,15 @@
                      NSNumber *y;
                      CGFloat newY;
              
-                     x = [_levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", _level, @"pieceX"]];
+                     x = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"pieceX"]];
                      newX = [x floatValue];
              
-                     y = [_levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", _level, @"pieceY"]];
+                     y = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"pieceY"]];
                      newY = [y floatValue];
                      
                      [self createPieceX:&newX Y:&newY];
                  
-                     _animationFlag = NO;
+                     self.animationFlag = NO;
                  }];
             }
         }
@@ -227,9 +227,9 @@
         {
             if (CGRectIntersectsRect(self.originalPieceView.frame, self.homeView.frame))
             {
-                if (!_animationFlag)
+                if (!self.animationFlag)
                 {
-                    _animationFlag = YES;
+                    self.animationFlag = YES;
                 
                     [UIImageView animateWithDuration:2.0 animations:^(void)
                      {
@@ -238,12 +238,15 @@
                                           completion:^(BOOL completion)
                      {
                          [self.originalPieceView removeFromSuperview];
-                     
-                         //ADD ALERT CONGRATULATIONS YOU BEAT LEVEL (level)
                          
-                         [self createLevel:_levels level:1];
-                     
-                         _animationFlag = NO;
+                         UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You beat level %d", self.level] preferredStyle:UIAlertControllerStyleAlert];
+                         
+                         [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
+                         {
+                             [self closeAlertview];
+                         }]];
+                         
+                         [self presentViewController:alertController animated:YES completion:nil];
                      }];
                 }
             }
@@ -251,6 +254,14 @@
     }
     
     
+}
+
+-(void)closeAlertview
+{
+    [self dismissViewControllerAnimated:YES completion:nil];
+    self.level++;
+    [self createLevel:self.levels level:self.level];
+    _animationFlag = NO;
 }
 
 - (UIColor *)pixelColorInImage: (UIImage*) mazeImage atX:(int)x atY:(int)y
