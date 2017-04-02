@@ -39,12 +39,12 @@
     
 }
 
-- (void) createLevel : (int) levelNumber
+- (void) createLevel : (int) level
 {
     self.levelView = [[UIImageView alloc] initWithFrame:CGRectZero];
     self.levelView.translatesAutoresizingMaskIntoConstraints = NO;
     
-    self.levelView.image = [UIImage imageNamed:[self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", levelNumber, @"name"]]];
+    self.levelView.image = [UIImage imageNamed:[self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", level, @"name"]]];
     
     [self.view addSubview:self.levelView];
     
@@ -334,7 +334,7 @@
                      
                          [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
                          {
-                             [self closeAlertview];
+                             [self closeCongratulationsView];
                          }]];
                      
                          [self presentViewController:alertController animated:YES completion:nil];
@@ -345,7 +345,7 @@
     }
 }
 
-- (void) closeAlertview
+- (void) closeCongratulationsView
 {
     [self dismissViewControllerAnimated:YES completion:nil];
     self.level++;
