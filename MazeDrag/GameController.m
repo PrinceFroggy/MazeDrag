@@ -10,8 +10,8 @@
 
 @interface GameController ()
 @property (nonatomic) UIImageView *levelView;
-@property (nonatomic) UIImageView *originalPieceView;
-@property (nonatomic) UIImageView *homeView;
+@property (nonatomic) UIImageView *draggablePiece;
+@property (nonatomic) UIImageView *homeSet;
 
 @property NSDictionary *level0;
 @property NSDictionary *level1;
@@ -21,6 +21,10 @@
 
 @property int level;
 @property BOOL animationFlag;
+
+#define HOME 0
+#define QUESTION 1
+#define PIECE 2
 @end
 
 @implementation GameController
@@ -88,27 +92,33 @@
     CGFloat newX;
     CGFloat newY;
     
-    newX = [[self loadPiece:@"X" Home: YES] floatValue];
-    newY = [[self loadPiece:@"Y" Home: YES] floatValue];
+    newX = [[self loadPiece:@"X" Piece: HOME] floatValue];
+    newY = [[self loadPiece:@"Y" Piece: HOME] floatValue];
     
-    [self createHomeX:&newX Y:&newY];
+    [self createHomeSetX:&newX Y:&newY];
     
-    newX = [[self loadPiece:@"X" Home: NO] floatValue];
-    newY = [[self loadPiece:@"Y" Home: NO] floatValue];
+    switch (self.level)
+    {
+        case 1:
+            break;
+    }
     
-    [self createPieceX:&newX Y:&newY];
+    newX = [[self loadPiece:@"X" Piece: PIECE] floatValue];
+    newY = [[self loadPiece:@"Y" Piece: PIECE] floatValue];
+    
+    [self createDraggablePieceX:&newX Y:&newY];
 }
 
-- (void) createHomeX : (CGFloat *) X Y: (CGFloat *) Y
+- (void) createHomeSetX : (CGFloat *) X Y: (CGFloat *) Y
 {
-    self.homeView = [[UIImageView alloc] initWithFrame:CGRectZero];
-    self.homeView.translatesAutoresizingMaskIntoConstraints = NO;
-    self.homeView.contentMode = UIViewContentModeScaleAspectFit;
-    self.homeView.image = [UIImage imageNamed:@"homePlate"];
+    self.homeSet = [[UIImageView alloc] initWithFrame:CGRectZero];
+    self.homeSet.translatesAutoresizingMaskIntoConstraints = NO;
+    self.homeSet.contentMode = UIViewContentModeScaleAspectFit;
+    self.homeSet.image = [UIImage imageNamed:@"homeSet"];
     
-    [self.view addSubview:self.homeView];
+    [self.view addSubview:self.homeSet];
     
-    NSLayoutConstraint *homeX = [NSLayoutConstraint constraintWithItem:self.homeView
+    NSLayoutConstraint *homeX = [NSLayoutConstraint constraintWithItem:self.homeSet
                                                              attribute:NSLayoutAttributeCenterX
                                                              relatedBy:NSLayoutRelationEqual
                                                                 toItem:self.view
@@ -116,7 +126,7 @@
                                                             multiplier:1.0
                                                               constant:*X];
     
-    NSLayoutConstraint *homeY = [NSLayoutConstraint constraintWithItem:self.homeView
+    NSLayoutConstraint *homeY = [NSLayoutConstraint constraintWithItem:self.homeSet
                                                              attribute:NSLayoutAttributeCenterY
                                                              relatedBy:NSLayoutRelationEqual
                                                                 toItem:self.view
@@ -129,16 +139,16 @@
     [self.view addConstraint:homeY];
 }
 
-- (void) createPieceX : (CGFloat *) X Y: (CGFloat *) Y
+- (void) createDraggablePieceX : (CGFloat *) X Y: (CGFloat *) Y
 {
-    self.originalPieceView = [[UIImageView alloc] initWithFrame:CGRectZero];
-    self.originalPieceView.translatesAutoresizingMaskIntoConstraints = NO;
-    self.originalPieceView.contentMode = UIViewContentModeScaleAspectFit;
-    self.originalPieceView.image = [UIImage imageNamed:@"piecePlate"];
+    self.draggablePiece = [[UIImageView alloc] initWithFrame:CGRectZero];
+    self.draggablePiece.translatesAutoresizingMaskIntoConstraints = NO;
+    self.draggablePiece.contentMode = UIViewContentModeScaleAspectFit;
+    self.draggablePiece.image = [UIImage imageNamed:@"draggablePiece"];
     
-    [self.view addSubview:self.originalPieceView];
+    [self.view addSubview:self.draggablePiece];
     
-    NSLayoutConstraint *pieceX = [NSLayoutConstraint constraintWithItem:self.originalPieceView
+    NSLayoutConstraint *pieceX = [NSLayoutConstraint constraintWithItem:self.draggablePiece
                                                               attribute:NSLayoutAttributeCenterX
                                                               relatedBy:NSLayoutRelationEqual
                                                                  toItem:self.view
@@ -146,7 +156,7 @@
                                                              multiplier:1.0
                                                                constant:*X];
     
-    NSLayoutConstraint *pieceY = [NSLayoutConstraint constraintWithItem:self.originalPieceView
+    NSLayoutConstraint *pieceY = [NSLayoutConstraint constraintWithItem:self.draggablePiece
                                                               attribute:NSLayoutAttributeCenterY
                                                               relatedBy:NSLayoutRelationEqual
                                                                  toItem:self.view
@@ -158,43 +168,55 @@
     [self.view addConstraint:pieceX];
     [self.view addConstraint:pieceY];
     
+    // move this
     if (_level > 0)
     {
         UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapPiece:)];
         tap.numberOfTapsRequired = 1;
-        [self.originalPieceView addGestureRecognizer:tap];
+        [self.draggablePiece addGestureRecognizer:tap];
     }
     
     UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panPiece:)];
-    [self.originalPieceView addGestureRecognizer:pan];
+    [self.draggablePiece addGestureRecognizer:pan];
     
-    self.originalPieceView.userInteractionEnabled = YES;
+    self.draggablePiece.userInteractionEnabled = YES;
 }
 
-- (NSNumber *) loadPiece : (NSString *) XY Home: (BOOL) home
+- (NSNumber *) loadPiece : (NSString *) XY Piece: (int) piece
 {
     NSNumber *coordinate;
     
     if ([XY isEqualToString:@"X"])
     {
-        if (home)
+        switch (piece)
         {
-            coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"homeX"]];
-        }
-        else
-        {
-            coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"pieceX"]];
+            case HOME:
+                coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"homeX"]];
+                break;
+                
+            case QUESTION:
+                
+                break;
+                
+            case PIECE:
+                coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"pieceX"]];
+                break;
         }
     }
     else
     {
-        if (home)
+        switch (piece)
         {
-            coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"homeY"]];
-        }
-        else
-        {
-            coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"pieceY"]];
+            case HOME:
+                coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"homeY"]];
+                break;
+                
+            case QUESTION:
+                break;
+                
+            case PIECE:
+                coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"pieceY"]];
+                break;
         }
     }
     
@@ -208,9 +230,9 @@
 
 - (void) tapPiece : (UITapGestureRecognizer *) tap
 {
-    CGRect rect = [self.originalPieceView frame];
+    CGRect rect = [self.draggablePiece frame];
     
-    if ([self.originalPieceView frame].size.height == 30)
+    if ([self.draggablePiece frame].size.height == 30)
     {
         rect.size.width = 23.0f;
         rect.size.height = 22.0f;
@@ -221,7 +243,7 @@
         rect.size.height = 30.0f;
     }
     
-    [self.originalPieceView setFrame:rect];
+    [self.draggablePiece setFrame:rect];
 }
 
 - (void) panPiece : (UIPanGestureRecognizer *) pan
@@ -230,10 +252,10 @@
     {
         if (pan.state == UIGestureRecognizerStateChanged)
         {
-            self.originalPieceView.center = [pan locationInView:self.view];
+            self.draggablePiece.center = [pan locationInView:self.view];
         }
         
-        [self checkBoundaries: self.originalPieceView.frame];
+        [self checkBoundaries: self.draggablePiece.frame];
         
         [self checkHome: pan];
     }
@@ -250,19 +272,19 @@
             
             [UIImageView animateWithDuration:2.0 animations:^(void)
              {
-                 self.originalPieceView.alpha = 0.0;
+                 self.draggablePiece.alpha = 0.0;
              }
                                   completion:^(BOOL completion)
              {
-                 [self.originalPieceView removeFromSuperview];
+                 [self.draggablePiece removeFromSuperview];
                  
                  CGFloat newX;
                  CGFloat newY;
                  
-                 newX = [[self loadPiece:@"X" Home: NO] floatValue];
-                 newY = [[self loadPiece:@"Y" Home: NO] floatValue];
+                 newX = [[self loadPiece:@"X" Piece: PIECE] floatValue];
+                 newY = [[self loadPiece:@"Y" Piece: PIECE] floatValue];
                  
-                 [self createPieceX:&newX Y:&newY];
+                 [self createDraggablePieceX:&newX Y:&newY];
                  
                  self.animationFlag = NO;
              }];
@@ -314,9 +336,9 @@
 {
     if (pan.state == UIGestureRecognizerStateEnded)
     {
-        if (CGRectIntersectsRect(self.originalPieceView.frame, self.homeView.frame))
+        if (CGRectIntersectsRect(self.draggablePiece.frame, self.homeSet.frame))
         {
-            if ([self.originalPieceView frame].size.height == 30)
+            if ([self.draggablePiece frame].size.height == 30)
             {
                 if (!self.animationFlag)
                 {
@@ -324,11 +346,11 @@
                 
                     [UIImageView animateWithDuration:2.0 animations:^(void)
                      {
-                         self.originalPieceView.alpha = 0.0;
+                         self.draggablePiece.alpha = 0.0;
                      }
                                           completion:^(BOOL completion)
                      {
-                         [self.originalPieceView removeFromSuperview];
+                         [self.draggablePiece removeFromSuperview];
                      
                          UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You beat level %d", self.level + 1] preferredStyle:UIAlertControllerStyleAlert];
                      
