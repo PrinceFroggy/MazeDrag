@@ -40,7 +40,7 @@
     _level1 = @{ @"name" : @"level_1", @"homeX" : @75, @"homeY" : @-195, @"upgradeX" : @103, @"upgradeY" : @40, @"pieceX" : @-147, @"pieceY" : @295};
     _levels = [[NSDictionary alloc] initWithObjectsAndKeys:_level0, @"0", _level1, @"1", _level2, @"2", nil];
     
-    _level = 0;
+    _level = 1;
     
     [self createLevel: _level];
     
