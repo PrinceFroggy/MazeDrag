@@ -10,8 +10,9 @@
 
 @interface GameController ()
 @property (nonatomic) UIImageView *levelView;
+@property (nonatomic) UIImageView *home;
+@property (nonatomic) UIImageView *upgrade;
 @property (nonatomic) UIImageView *draggablePiece;
-@property (nonatomic) UIImageView *homeSet;
 
 @property NSDictionary *level0;
 @property NSDictionary *level1;
@@ -22,8 +23,10 @@
 @property int level;
 @property BOOL animationFlag;
 
+// MAP IS RENDERING PIECE LAST TO BE ABOVE REST OF ASSETS
+
 #define HOME 0
-#define QUESTION 1
+#define UPGRADE 1
 #define PIECE 2
 @end
 
@@ -34,7 +37,7 @@
     [super viewDidLoad];
     
     _level0 = @{ @"name" : @"level_0", @"homeX" : @140, @"homeY" : @-10, @"pieceX" : @-140, @"pieceY" : @-10};
-    _level1 = @{ @"name" : @"level_1", @"homeX" : @75, @"homeY" : @-195, @"pieceX" : @-147, @"pieceY" : @295};
+    _level1 = @{ @"name" : @"level_1", @"homeX" : @75, @"homeY" : @-195, @"upgradeX" : @103, @"upgradeY" : @40, @"pieceX" : @-147, @"pieceY" : @295};
     _levels = [[NSDictionary alloc] initWithObjectsAndKeys:_level0, @"0", _level1, @"1", _level2, @"2", nil];
     
     _level = 0;
@@ -95,30 +98,48 @@
     newX = [[self loadPiece:@"X" Piece: HOME] floatValue];
     newY = [[self loadPiece:@"Y" Piece: HOME] floatValue];
     
-    [self createHomeSetX:&newX Y:&newY];
+    [self createHomeAtX:&newX andY:&newY];
+    
+    newX = self.defaultFloatValue;
+    newY = self.defaultFloatValue;
     
     switch (self.level)
     {
         case 1:
+            newX = [[self loadPiece:@"X" Piece: UPGRADE] floatValue];
+            newY = [[self loadPiece:@"Y" Piece: UPGRADE] floatValue];
             break;
     }
+    
+    if (newX != 0 || newY != 0)
+    {
+        [self createUpgradeAtX:&newX andY:&newY];
+    }
+    
+    newX = self.defaultFloatValue;
+    newY = self.defaultFloatValue;
     
     newX = [[self loadPiece:@"X" Piece: PIECE] floatValue];
     newY = [[self loadPiece:@"Y" Piece: PIECE] floatValue];
     
-    [self createDraggablePieceX:&newX Y:&newY];
+    [self createDraggablePieceAtX:&newX andY:&newY];
 }
 
-- (void) createHomeSetX : (CGFloat *) X Y: (CGFloat *) Y
+- (CGFloat) defaultFloatValue
 {
-    self.homeSet = [[UIImageView alloc] initWithFrame:CGRectZero];
-    self.homeSet.translatesAutoresizingMaskIntoConstraints = NO;
-    self.homeSet.contentMode = UIViewContentModeScaleAspectFit;
-    self.homeSet.image = [UIImage imageNamed:@"homeSet"];
+    return 0;
+}
+
+- (void) createHomeAtX : (CGFloat *) X andY: (CGFloat *) Y
+{
+    self.home = [[UIImageView alloc] initWithFrame:CGRectZero];
+    self.home.translatesAutoresizingMaskIntoConstraints = NO;
+    self.home.contentMode = UIViewContentModeScaleAspectFit;
+    self.home.image = [UIImage imageNamed:@"home"];
     
-    [self.view addSubview:self.homeSet];
+    [self.view addSubview:self.home];
     
-    NSLayoutConstraint *homeX = [NSLayoutConstraint constraintWithItem:self.homeSet
+    NSLayoutConstraint *homeX = [NSLayoutConstraint constraintWithItem:self.home
                                                              attribute:NSLayoutAttributeCenterX
                                                              relatedBy:NSLayoutRelationEqual
                                                                 toItem:self.view
@@ -126,7 +147,7 @@
                                                             multiplier:1.0
                                                               constant:*X];
     
-    NSLayoutConstraint *homeY = [NSLayoutConstraint constraintWithItem:self.homeSet
+    NSLayoutConstraint *homeY = [NSLayoutConstraint constraintWithItem:self.home
                                                              attribute:NSLayoutAttributeCenterY
                                                              relatedBy:NSLayoutRelationEqual
                                                                 toItem:self.view
@@ -139,7 +160,37 @@
     [self.view addConstraint:homeY];
 }
 
-- (void) createDraggablePieceX : (CGFloat *) X Y: (CGFloat *) Y
+- (void) createUpgradeAtX: (CGFloat *) X andY: (CGFloat *) Y
+{
+    self.upgrade = [[UIImageView alloc] initWithFrame:CGRectZero];
+    self.upgrade.translatesAutoresizingMaskIntoConstraints = NO;
+    self.upgrade.contentMode = UIViewContentModeScaleAspectFit;
+    self.upgrade.image = [UIImage imageNamed:@"upgrade"];
+    
+    [self.view addSubview:self.upgrade];
+    
+    NSLayoutConstraint *upgradeX = [NSLayoutConstraint constraintWithItem:self.upgrade
+                                                             attribute:NSLayoutAttributeCenterX
+                                                             relatedBy:NSLayoutRelationEqual
+                                                                toItem:self.view
+                                                             attribute:NSLayoutAttributeCenterX
+                                                            multiplier:1.0
+                                                              constant:*X];
+    
+    NSLayoutConstraint *upgradeY = [NSLayoutConstraint constraintWithItem:self.upgrade
+                                                             attribute:NSLayoutAttributeCenterY
+                                                             relatedBy:NSLayoutRelationEqual
+                                                                toItem:self.view
+                                                             attribute:NSLayoutAttributeCenterY
+                                                            multiplier:1.0
+                                                              constant:*Y];
+    
+    
+    [self.view addConstraint:upgradeX];
+    [self.view addConstraint:upgradeY];
+}
+
+- (void) createDraggablePieceAtX : (CGFloat *) X andY: (CGFloat *) Y
 {
     self.draggablePiece = [[UIImageView alloc] initWithFrame:CGRectZero];
     self.draggablePiece.translatesAutoresizingMaskIntoConstraints = NO;
@@ -168,14 +219,6 @@
     [self.view addConstraint:pieceX];
     [self.view addConstraint:pieceY];
     
-    // move this
-    if (_level > 0)
-    {
-        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapPiece:)];
-        tap.numberOfTapsRequired = 1;
-        [self.draggablePiece addGestureRecognizer:tap];
-    }
-    
     UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panPiece:)];
     [self.draggablePiece addGestureRecognizer:pan];
     
@@ -194,8 +237,8 @@
                 coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"homeX"]];
                 break;
                 
-            case QUESTION:
-                
+            case UPGRADE:
+                coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"upgradeX"]];
                 break;
                 
             case PIECE:
@@ -211,7 +254,8 @@
                 coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"homeY"]];
                 break;
                 
-            case QUESTION:
+            case UPGRADE:
+                coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"upgradeY"]];
                 break;
                 
             case PIECE:
@@ -255,13 +299,15 @@
             self.draggablePiece.center = [pan locationInView:self.view];
         }
         
-        [self checkBoundaries: self.draggablePiece.frame];
+        [self checkWaterBoundaries: self.draggablePiece.frame];
         
-        [self checkHome: pan];
+        [self checkHomeBoundaries: pan];
+        
+        [self checkUpgradeBoundaries: pan];
     }
 }
 
-- (void) checkBoundaries : (CGRect) piece
+- (void) checkWaterBoundaries : (CGRect) piece
 {
     if ([self pixelColorInImage:[self.levelView image] atX:piece.origin.x atY:piece.origin.y] == [UIColor blueColor]
         || [self pixelColorInImage:[self.levelView image] atX:piece.origin.x + piece.size.width atY:piece.origin.y + piece.size.height])
@@ -284,7 +330,13 @@
                  newX = [[self loadPiece:@"X" Piece: PIECE] floatValue];
                  newY = [[self loadPiece:@"Y" Piece: PIECE] floatValue];
                  
-                 [self createDraggablePieceX:&newX Y:&newY];
+                 [self createDraggablePieceAtX:&newX andY:&newY];
+                 
+                 // maybe temporary
+                 if (self.upgrade.alpha == 0.0)
+                 {
+                     self.upgrade.alpha = 1.0;
+                 }
                  
                  self.animationFlag = NO;
              }];
@@ -332,11 +384,11 @@
     return boundaries;
 }
 
-- (void) checkHome : (UIPanGestureRecognizer *) pan
+- (void) checkHomeBoundaries : (UIPanGestureRecognizer *) pan
 {
     if (pan.state == UIGestureRecognizerStateEnded)
     {
-        if (CGRectIntersectsRect(self.draggablePiece.frame, self.homeSet.frame))
+        if (CGRectIntersectsRect(self.draggablePiece.frame, self.home.frame))
         {
             if ([self.draggablePiece frame].size.height == 30)
             {
@@ -360,6 +412,8 @@
                          }]];
                      
                          [self presentViewController:alertController animated:YES completion:nil];
+                         
+                         _animationFlag = NO;
                      }];
                 }
             }
@@ -372,7 +426,55 @@
     [self dismissViewControllerAnimated:YES completion:nil];
     self.level++;
     [self createLevel: self.level];
-    _animationFlag = NO;
+}
+
+- (void) checkUpgradeBoundaries : (UIPanGestureRecognizer *) pan
+{
+    if (pan.state == UIGestureRecognizerStateEnded)
+    {
+        if (CGRectIntersectsRect(self.draggablePiece.frame, self.upgrade.frame))
+        {
+            if ([self.draggablePiece frame].size.height == 30)
+            {
+                if (!self.animationFlag)
+                {
+                    self.animationFlag = YES;
+                    
+                    [UIImageView animateWithDuration:2.0 animations:^(void)
+                     {
+                         self.upgrade.alpha = 0.0;
+                     }
+                                          completion:^(BOOL completion)
+                     {
+                         // [self.upgrade removeFromSuperview]; // teleports spider back to beginning?
+                         
+                         UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You have found the tap upgrade!"] preferredStyle:UIAlertControllerStyleAlert];
+                         
+                         [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
+                                                     {
+                                                         [self closeUpgradeView];
+                                                     }]];
+                         
+                         [self presentViewController:alertController animated:YES completion:nil];
+                         
+                         _animationFlag = NO;
+                     }];
+                }
+            }
+        }
+    }
+}
+
+- (void) closeUpgradeView
+{
+    [self dismissViewControllerAnimated:YES completion:nil];
+    
+    if (_level > 0)
+    {
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapPiece:)];
+        tap.numberOfTapsRequired = 1;
+        [self.draggablePiece addGestureRecognizer:tap];
+    }
 }
 
 @end
