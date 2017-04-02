@@ -6,9 +6,9 @@
 //  Copyright © 2017 KSG. All rights reserved.
 //
 
-#import "ViewController.h"
+#import "GameController.h"
 
-@interface ViewController ()
+@interface GameController ()
 @property (nonatomic) UIImageView *levelView;
 @property (nonatomic) UIImageView *originalPieceView;
 @property (nonatomic) UIImageView *homeView;
@@ -23,7 +23,7 @@
 @property BOOL animationFlag;
 @end
 
-@implementation ViewController
+@implementation GameController
 
 - (void)viewDidLoad
 {
@@ -31,20 +31,20 @@
     
     _level0 = @{ @"name" : @"level_0", @"homeX" : @140, @"homeY" : @-10, @"pieceX" : @-140, @"pieceY" : @-10};
     _level1 = @{ @"name" : @"level_1", @"homeX" : @75, @"homeY" : @-195, @"pieceX" : @-147, @"pieceY" : @295};
-    _levels = [[NSDictionary alloc] initWithObjectsAndKeys:_level0, @"0", _level1, @"1", nil];
+    _levels = [[NSDictionary alloc] initWithObjectsAndKeys:_level0, @"0", _level1, @"1", _level2, @"2", nil];
     
     _level = 0;
     
-    [self createLevel:_levels level:_level];
+    [self createLevel: _level];
     
 }
 
-- (void) createLevel : (NSDictionary *) levelDict level: (int) levelNumber
+- (void) createLevel : (int) levelNumber
 {
     self.levelView = [[UIImageView alloc] initWithFrame:CGRectZero];
     self.levelView.translatesAutoresizingMaskIntoConstraints = NO;
     
-    self.levelView.image = [UIImage imageNamed:[levelDict valueForKeyPath: [NSString stringWithFormat:@"%d.%@", levelNumber, @"name"]]];
+    self.levelView.image = [UIImage imageNamed:[self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", levelNumber, @"name"]]];
     
     [self.view addSubview:self.levelView];
     
@@ -85,24 +85,16 @@
     [self.view addConstraint:levelTop];
     [self.view addConstraint:levelBottom];
     
-    NSNumber *x;
     CGFloat newX;
-    NSNumber *y;
     CGFloat newY;
     
-    x = [levelDict valueForKeyPath: [NSString stringWithFormat:@"%d.%@", levelNumber, @"homeX"]];
-    newX = [x floatValue];
-    
-    y = [levelDict valueForKeyPath: [NSString stringWithFormat:@"%d.%@", levelNumber, @"homeY"]];
-    newY = [y floatValue];
+    newX = [[self loadPiece:@"X" Home: YES] floatValue];
+    newY = [[self loadPiece:@"Y" Home: YES] floatValue];
     
     [self createHomeX:&newX Y:&newY];
     
-    x = [levelDict valueForKeyPath: [NSString stringWithFormat:@"%d.%@", levelNumber, @"pieceX"]];
-    newX = [x floatValue];
-    
-    y = [levelDict valueForKeyPath: [NSString stringWithFormat:@"%d.%@", levelNumber, @"pieceY"]];
-    newY = [y floatValue];
+    newX = [[self loadPiece:@"X" Home: NO] floatValue];
+    newY = [[self loadPiece:@"Y" Home: NO] floatValue];
     
     [self createPieceX:&newX Y:&newY];
 }
@@ -166,9 +158,12 @@
     [self.view addConstraint:pieceX];
     [self.view addConstraint:pieceY];
     
-    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapPiece:)];
-    tap.numberOfTapsRequired = 1;
-    [self.originalPieceView addGestureRecognizer:tap];
+    if (_level > 0)
+    {
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapPiece:)];
+        tap.numberOfTapsRequired = 1;
+        [self.originalPieceView addGestureRecognizer:tap];
+    }
     
     UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panPiece:)];
     [self.originalPieceView addGestureRecognizer:pan];
@@ -176,17 +171,31 @@
     self.originalPieceView.userInteractionEnabled = YES;
 }
 
-- (NSNumber *) loadPiece : (NSString *) XY
+- (NSNumber *) loadPiece : (NSString *) XY Home: (BOOL) home
 {
     NSNumber *coordinate;
     
     if ([XY isEqualToString:@"X"])
     {
-        coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"pieceX"]];
+        if (home)
+        {
+            coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"homeX"]];
+        }
+        else
+        {
+            coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"pieceX"]];
+        }
     }
     else
     {
-        coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"pieceY"]];
+        if (home)
+        {
+            coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"homeY"]];
+        }
+        else
+        {
+            coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"pieceY"]];
+        }
     }
     
     return coordinate;
@@ -215,21 +224,18 @@
     [self.originalPieceView setFrame:rect];
 }
 
-- (void) panPiece : (UIPanGestureRecognizer *)pan
+- (void) panPiece : (UIPanGestureRecognizer *) pan
 {
     if (!self.animationFlag)
     {
         if (pan.state == UIGestureRecognizerStateChanged)
         {
-            CGPoint point = [pan locationInView:self.view];
-            self.originalPieceView.center = point;
+            self.originalPieceView.center = [pan locationInView:self.view];
         }
         
-        CGRect piece = self.originalPieceView.frame;
+        [self checkBoundaries: self.originalPieceView.frame];
         
-        [self checkBoundaries:piece];
-        
-        [self checkHome:pan];
+        [self checkHome: pan];
     }
 }
 
@@ -253,8 +259,8 @@
                  CGFloat newX;
                  CGFloat newY;
                  
-                 newX = [[self loadPiece:@"X"] floatValue];
-                 newY = [[self loadPiece:@"Y"] floatValue];
+                 newX = [[self loadPiece:@"X" Home: NO] floatValue];
+                 newY = [[self loadPiece:@"Y" Home: NO] floatValue];
                  
                  [self createPieceX:&newX Y:&newY];
                  
@@ -290,7 +296,6 @@
     
     switch (R)
     {
-            // The numbers below are possible color's of the water tile
         case 36:
         case 37:
         case 38:
@@ -311,37 +316,40 @@
     {
         if (CGRectIntersectsRect(self.originalPieceView.frame, self.homeView.frame))
         {
-            if (!self.animationFlag)
+            if ([self.originalPieceView frame].size.height == 30)
             {
-                self.animationFlag = YES;
+                if (!self.animationFlag)
+                {
+                    self.animationFlag = YES;
                 
-                [UIImageView animateWithDuration:2.0 animations:^(void)
-                 {
-                     self.originalPieceView.alpha = 0.0;
-                 }
-                                      completion:^(BOOL completion)
-                 {
-                     [self.originalPieceView removeFromSuperview];
+                    [UIImageView animateWithDuration:2.0 animations:^(void)
+                     {
+                         self.originalPieceView.alpha = 0.0;
+                     }
+                                          completion:^(BOOL completion)
+                     {
+                         [self.originalPieceView removeFromSuperview];
                      
-                     UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You beat level %d", self.level + 1] preferredStyle:UIAlertControllerStyleAlert];
+                         UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You beat level %d", self.level + 1] preferredStyle:UIAlertControllerStyleAlert];
                      
-                     [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
-                                                 {
-                                                     [self closeAlertview];
-                                                 }]];
+                         [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
+                         {
+                             [self closeAlertview];
+                         }]];
                      
-                     [self presentViewController:alertController animated:YES completion:nil];
-                 }];
+                         [self presentViewController:alertController animated:YES completion:nil];
+                     }];
+                }
             }
         }
     }
 }
 
--(void)closeAlertview
+- (void) closeAlertview
 {
     [self dismissViewControllerAnimated:YES completion:nil];
     self.level++;
-    [self createLevel:self.levels level:self.level];
+    [self createLevel: self.level];
     _animationFlag = NO;
 }
 
