@@ -46,10 +46,13 @@
     
     [self createLevel: _level];
     
+    [NSTimer scheduledTimerWithTimeInterval:60 target:self selector:@selector(pieceDeath) userInfo:nil repeats:YES];
+    
 }
 
 - (void) createLevel : (int) level
 {
+    
     self.levelView = [[UIImageView alloc] initWithFrame:CGRectZero];
     self.levelView.translatesAutoresizingMaskIntoConstraints = NO;
     
