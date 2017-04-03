@@ -42,7 +42,7 @@
     _level1 = @{ @"name" : @"level_1", @"homeX" : @75, @"homeY" : @-195, @"upgradeX" : @103, @"upgradeY" : @40, @"pieceX" : @-147, @"pieceY" : @295};
     _levels = [[NSDictionary alloc] initWithObjectsAndKeys:_level0, @"0", _level1, @"1", _level2, @"2", nil];
     
-    _level = 1;
+    _level = 0;
     
     [self createLevel: _level];
     
@@ -314,32 +314,38 @@
     if ([self pixelColorInImage:[self.levelView image] atX:piece.origin.x atY:piece.origin.y] == [UIColor blueColor]
         || [self pixelColorInImage:[self.levelView image] atX:piece.origin.x + piece.size.width atY:piece.origin.y + piece.size.height])
     {
-        if (!self.animationFlag)
-        {
-            self.animationFlag = YES;
-            
-            [UIImageView animateWithDuration:2.0 animations:^(void)
-             {
-                 self.draggablePiece.alpha = 0.0;
-             }
-                                  completion:^(BOOL completion)
-             {
-                 [self.draggablePiece removeFromSuperview];
-                 
-                 [self regenerateUpgrade];
-                 
-                 CGFloat newX;
-                 CGFloat newY;
-                 
-                 newX = [[self loadPiece:@"X" Piece: PIECE] floatValue];
-                 newY = [[self loadPiece:@"Y" Piece: PIECE] floatValue];
-                 
-                 [self createDraggablePieceAtX:newX andY:newY];
-                 
-                 self.animationFlag = NO;
-             }];
-        }
+        [self pieceDeath];
     }
+}
+
+- (void) pieceDeath
+{
+    if (!self.animationFlag)
+    {
+        self.animationFlag = YES;
+        
+        [UIImageView animateWithDuration:2.0 animations:^(void)
+         {
+             self.draggablePiece.alpha = 0.0;
+         }
+                              completion:^(BOOL completion)
+         {
+             [self.draggablePiece removeFromSuperview];
+             
+             [self regenerateUpgrade];
+             
+             CGFloat newX;
+             CGFloat newY;
+             
+             newX = [[self loadPiece:@"X" Piece: PIECE] floatValue];
+             newY = [[self loadPiece:@"Y" Piece: PIECE] floatValue];
+             
+             [self createDraggablePieceAtX:newX andY:newY];
+             
+             self.animationFlag = NO;
+         }];
+    }
+
 }
 
 - (void) regenerateUpgrade
