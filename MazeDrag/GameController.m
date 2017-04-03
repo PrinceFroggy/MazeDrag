@@ -175,20 +175,20 @@
     [self.view addSubview:self.upgrade];
     
     NSLayoutConstraint *upgradeX = [NSLayoutConstraint constraintWithItem:self.upgrade
-                                                             attribute:NSLayoutAttributeCenterX
-                                                             relatedBy:NSLayoutRelationEqual
-                                                                toItem:self.view
-                                                             attribute:NSLayoutAttributeCenterX
-                                                            multiplier:1.0
-                                                              constant:X];
+                                                                attribute:NSLayoutAttributeCenterX
+                                                                relatedBy:NSLayoutRelationEqual
+                                                                   toItem:self.view
+                                                                attribute:NSLayoutAttributeCenterX
+                                                               multiplier:1.0
+                                                                 constant:X];
     
     NSLayoutConstraint *upgradeY = [NSLayoutConstraint constraintWithItem:self.upgrade
-                                                             attribute:NSLayoutAttributeCenterY
-                                                             relatedBy:NSLayoutRelationEqual
-                                                                toItem:self.view
-                                                             attribute:NSLayoutAttributeCenterY
-                                                            multiplier:1.0
-                                                              constant:Y];
+                                                                attribute:NSLayoutAttributeCenterY
+                                                                relatedBy:NSLayoutRelationEqual
+                                                                   toItem:self.view
+                                                                attribute:NSLayoutAttributeCenterY
+                                                               multiplier:1.0
+                                                                 constant:Y];
     
     
     [self.view addConstraint:upgradeX];
@@ -306,9 +306,9 @@
         
         [self checkWaterBoundaries: self.draggablePiece.frame];
         
-        [self checkUpgradeBoundaries: pan];
-        
         [self checkHomeBoundaries: pan];
+        
+        [self checkUpgradeBoundaries: pan];
     }
 }
 
@@ -348,7 +348,7 @@
              self.animationFlag = NO;
          }];
     }
-
+    
 }
 
 - (void) regenerateUpgrade
@@ -410,7 +410,7 @@
                 if (!self.animationFlag)
                 {
                     self.animationFlag = YES;
-                
+                    
                     [UIImageView animateWithDuration:2.0 animations:^(void)
                      {
                          self.draggablePiece.alpha = 0.0;
@@ -418,14 +418,14 @@
                                           completion:^(BOOL completion)
                      {
                          [self.draggablePiece removeFromSuperview];
-                     
+                         
                          self.alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You beat level %d", self.level + 1] preferredStyle:UIAlertControllerStyleAlert];
-                     
+                         
                          [self.alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
-                         {
-                             [self closeCongratulationsView];
-                         }]];
-                     
+                                                          {
+                                                              [self closeCongratulationsView];
+                                                          }]];
+                         
                          [self presentViewController:self.alertController animated:YES completion:nil];
                          
                          _animationFlag = NO;
@@ -445,39 +445,47 @@
 
 - (void) checkUpgradeBoundaries : (UIPanGestureRecognizer *) pan
 {
-    if (pan.state == UIGestureRecognizerStateEnded)
+    if ([self isUpgradeAvailable])
     {
-        if (CGRectIntersectsRect(self.draggablePiece.frame, self.upgrade.frame))
+        if (pan.state == UIGestureRecognizerStateEnded)
         {
-            if ([self.draggablePiece frame].size.height == 30)
+            if (CGRectIntersectsRect(self.draggablePiece.frame, self.upgrade.frame))
             {
-                if (!self.animationFlag)
+                if ([self.draggablePiece frame].size.height == 30)
                 {
-                    self.animationFlag = YES;
-                    
-                    [UIImageView animateWithDuration:2.0 animations:^(void)
-                     {
-                         self.upgrade.alpha = 0.0;
-                     }
-                                          completion:^(BOOL completion)
-                     {
-                         //[self.upgrade removeFromSuperview]; // teleports spider back to beginning?
-                         
-                         self.alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You unlocked the tap upgrade!"] preferredStyle:UIAlertControllerStyleAlert];
-                         
-                         [self.alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
-                                                     {
-                                                         [self closeUpgradeView];
-                                                     }]];
-                         
-                         [self presentViewController:self.alertController animated:YES completion:nil];
-                         
-                         _animationFlag = NO;
-                     }];
+                    if (!self.animationFlag)
+                    {
+                        self.animationFlag = YES;
+                        
+                        [UIImageView animateWithDuration:2.0 animations:^(void)
+                         {
+                             self.upgrade.alpha = 0.0;
+                         }
+                                              completion:^(BOOL completion)
+                         {
+                             //[self.upgrade removeFromSuperview]; // teleports spider back to beginning?
+                             
+                             self.alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You unlocked the tap upgrade!"] preferredStyle:UIAlertControllerStyleAlert];
+                             
+                             [self.alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
+                                                              {
+                                                                  [self closeUpgradeView];
+                                                              }]];
+                             
+                             [self presentViewController:self.alertController animated:YES completion:nil];
+                             
+                             _animationFlag = NO;
+                         }];
+                    }
                 }
             }
         }
     }
+}
+
+- (BOOL) isUpgradeAvailable
+{
+    return self.upgrade.alpha == 1.0 ? YES : NO;
 }
 
 - (void) closeUpgradeView
