@@ -28,6 +28,8 @@
 #define HOME 0
 #define UPGRADE 1
 #define PIECE 2
+
+@property UIAlertController *alertController;
 @end
 
 @implementation GameController
@@ -98,7 +100,7 @@
     newX = [[self loadPiece:@"X" Piece: HOME] floatValue];
     newY = [[self loadPiece:@"Y" Piece: HOME] floatValue];
     
-    [self createHomeAtX:&newX andY:&newY];
+    [self createHomeAtX:newX andY:newY];
     
     newX = self.defaultFloatValue;
     newY = self.defaultFloatValue;
@@ -113,7 +115,7 @@
     
     if (newX != 0 || newY != 0)
     {
-        [self createUpgradeAtX:&newX andY:&newY];
+        [self createUpgradeAtX:newX andY:newY];
     }
     
     newX = self.defaultFloatValue;
@@ -122,7 +124,7 @@
     newX = [[self loadPiece:@"X" Piece: PIECE] floatValue];
     newY = [[self loadPiece:@"Y" Piece: PIECE] floatValue];
     
-    [self createDraggablePieceAtX:&newX andY:&newY];
+    [self createDraggablePieceAtX:newX andY:newY];
 }
 
 - (CGFloat) defaultFloatValue
@@ -130,7 +132,7 @@
     return 0;
 }
 
-- (void) createHomeAtX : (CGFloat *) X andY: (CGFloat *) Y
+- (void) createHomeAtX : (CGFloat) X andY: (CGFloat) Y
 {
     self.home = [[UIImageView alloc] initWithFrame:CGRectZero];
     self.home.translatesAutoresizingMaskIntoConstraints = NO;
@@ -145,7 +147,7 @@
                                                                 toItem:self.view
                                                              attribute:NSLayoutAttributeCenterX
                                                             multiplier:1.0
-                                                              constant:*X];
+                                                              constant:X];
     
     NSLayoutConstraint *homeY = [NSLayoutConstraint constraintWithItem:self.home
                                                              attribute:NSLayoutAttributeCenterY
@@ -153,14 +155,14 @@
                                                                 toItem:self.view
                                                              attribute:NSLayoutAttributeCenterY
                                                             multiplier:1.0
-                                                              constant:*Y];
+                                                              constant:Y];
     
     
     [self.view addConstraint:homeX];
     [self.view addConstraint:homeY];
 }
 
-- (void) createUpgradeAtX: (CGFloat *) X andY: (CGFloat *) Y
+- (void) createUpgradeAtX: (CGFloat) X andY: (CGFloat) Y
 {
     self.upgrade = [[UIImageView alloc] initWithFrame:CGRectZero];
     self.upgrade.translatesAutoresizingMaskIntoConstraints = NO;
@@ -175,7 +177,7 @@
                                                                 toItem:self.view
                                                              attribute:NSLayoutAttributeCenterX
                                                             multiplier:1.0
-                                                              constant:*X];
+                                                              constant:X];
     
     NSLayoutConstraint *upgradeY = [NSLayoutConstraint constraintWithItem:self.upgrade
                                                              attribute:NSLayoutAttributeCenterY
@@ -183,14 +185,14 @@
                                                                 toItem:self.view
                                                              attribute:NSLayoutAttributeCenterY
                                                             multiplier:1.0
-                                                              constant:*Y];
+                                                              constant:Y];
     
     
     [self.view addConstraint:upgradeX];
     [self.view addConstraint:upgradeY];
 }
 
-- (void) createDraggablePieceAtX : (CGFloat *) X andY: (CGFloat *) Y
+- (void) createDraggablePieceAtX : (CGFloat) X andY: (CGFloat) Y
 {
     self.draggablePiece = [[UIImageView alloc] initWithFrame:CGRectZero];
     self.draggablePiece.translatesAutoresizingMaskIntoConstraints = NO;
@@ -205,7 +207,7 @@
                                                                  toItem:self.view
                                                               attribute:NSLayoutAttributeCenterX
                                                              multiplier:1.0
-                                                               constant:*X];
+                                                               constant:X];
     
     NSLayoutConstraint *pieceY = [NSLayoutConstraint constraintWithItem:self.draggablePiece
                                                               attribute:NSLayoutAttributeCenterY
@@ -213,7 +215,7 @@
                                                                  toItem:self.view
                                                               attribute:NSLayoutAttributeCenterY
                                                              multiplier:1.0
-                                                               constant:*Y];
+                                                               constant:Y];
     
     
     [self.view addConstraint:pieceX];
@@ -301,9 +303,9 @@
         
         [self checkWaterBoundaries: self.draggablePiece.frame];
         
-        [self checkHomeBoundaries: pan];
-        
         [self checkUpgradeBoundaries: pan];
+        
+        [self checkHomeBoundaries: pan];
     }
 }
 
@@ -324,23 +326,27 @@
              {
                  [self.draggablePiece removeFromSuperview];
                  
+                 [self regenerateUpgrade];
+                 
                  CGFloat newX;
                  CGFloat newY;
                  
                  newX = [[self loadPiece:@"X" Piece: PIECE] floatValue];
                  newY = [[self loadPiece:@"Y" Piece: PIECE] floatValue];
                  
-                 [self createDraggablePieceAtX:&newX andY:&newY];
-                 
-                 // maybe temporary
-                 if (self.upgrade.alpha == 0.0)
-                 {
-                     self.upgrade.alpha = 1.0;
-                 }
+                 [self createDraggablePieceAtX:newX andY:newY];
                  
                  self.animationFlag = NO;
              }];
         }
+    }
+}
+
+- (void) regenerateUpgrade
+{
+    if (self.upgrade.alpha == 0.0)
+    {
+        self.upgrade.alpha = 1.0;
     }
 }
 
@@ -404,14 +410,14 @@
                      {
                          [self.draggablePiece removeFromSuperview];
                      
-                         UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You beat level %d", self.level + 1] preferredStyle:UIAlertControllerStyleAlert];
+                         self.alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You beat level %d", self.level + 1] preferredStyle:UIAlertControllerStyleAlert];
                      
-                         [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
+                         [self.alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
                          {
                              [self closeCongratulationsView];
                          }]];
                      
-                         [self presentViewController:alertController animated:YES completion:nil];
+                         [self presentViewController:self.alertController animated:YES completion:nil];
                          
                          _animationFlag = NO;
                      }];
@@ -423,7 +429,7 @@
 
 - (void) closeCongratulationsView
 {
-    [self dismissViewControllerAnimated:YES completion:nil];
+    [self.alertController dismissViewControllerAnimated:YES completion:nil];
     self.level++;
     [self createLevel: self.level];
 }
@@ -446,16 +452,16 @@
                      }
                                           completion:^(BOOL completion)
                      {
-                         // [self.upgrade removeFromSuperview]; // teleports spider back to beginning?
+                         //[self.upgrade removeFromSuperview]; // teleports spider back to beginning?
                          
-                         UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You have found the tap upgrade!"] preferredStyle:UIAlertControllerStyleAlert];
+                         self.alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You unlocked the tap upgrade!"] preferredStyle:UIAlertControllerStyleAlert];
                          
-                         [alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
+                         [self.alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
                                                      {
                                                          [self closeUpgradeView];
                                                      }]];
                          
-                         [self presentViewController:alertController animated:YES completion:nil];
+                         [self presentViewController:self.alertController animated:YES completion:nil];
                          
                          _animationFlag = NO;
                      }];
@@ -467,7 +473,7 @@
 
 - (void) closeUpgradeView
 {
-    [self dismissViewControllerAnimated:YES completion:nil];
+    [self.alertController dismissViewControllerAnimated:YES completion:nil];
     
     if (_level > 0)
     {
