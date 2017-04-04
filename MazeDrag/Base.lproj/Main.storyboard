@@ -40,6 +40,9 @@
                                 <rect key="frame" x="135" y="337" width="105" height="52"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <state key="normal" image="rankButton"/>
+                                <connections>
+                                    <segue destination="kdf-qb-c5Q" kind="show" id="fI4-n9-LLr"/>
+                                </connections>
                             </button>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
@@ -71,7 +74,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="kNg-5p-daN" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-791" y="478"/>
+            <point key="canvasLocation" x="-1611" y="-186"/>
         </scene>
         <!--Game Controller-->
         <scene sceneID="tne-QT-ifu">
@@ -129,7 +132,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="-791.20000000000005" y="-1015.1424287856073"/>
+            <point key="canvasLocation" x="-1110" y="-1016"/>
         </scene>
     </scenes>
     <resources>
