@@ -19,10 +19,12 @@
 
 @property (nonatomic) UIImageView *home;
 @property (nonatomic) UIImageView *upgrade;
-@property (nonatomic) UIImageView *easyMonster;
-@property (nonatomic) UIImageView *mediumMonster;
-@property (nonatomic) UIImageView *hardMonster;
+
+@property (nonatomic) UIImageView *monster;
+@property int monsterNumber;
+
 @property (nonatomic) UIImageView *draggablePiece;
+@property UIPanGestureRecognizer *pan;
 
 @property NSDictionary *level0;
 @property NSDictionary *level1;
@@ -34,11 +36,12 @@
 @property BOOL timerFlag;
 @property BOOL animationFlag;
 
-// MAP IS RENDERING PIECE LAST TO BE ABOVE REST OF ASSETS
+// MAP IS RENDERING PIECE AT SECOND TO BE ABOVE YET BEHIND MONSTER
 
 #define HOME 0
 #define UPGRADE 1
 #define PIECE 2
+#define MONSTER 3
 
 #define EASY_MONSTER 0
 #define MEDIUM_MONSTER 1
@@ -53,9 +56,9 @@
 {
     [super viewDidLoad];
     
-    _level0 = @{ @"name" : @"level_0", @"homeX" : @140, @"homeY" : @-10, @"pieceX" : @-140, @"pieceY" : @-10};
-    _level1 = @{ @"name" : @"level_1", @"homeX" : @75, @"homeY" : @-195, @"upgradeX" : @104, @"upgradeY" : @40, @"pieceX" : @-147, @"pieceY" : @295};
-    _level2 = @{ @"name" : @"level_2", @"homeX" : @75, @"homeY" : @-195, @"upgradeX" : @40, @"upgradeY" : @288, @"pieceX" : @-40, @"pieceY" : @290, @"monsters" : @3, @"monsterX": , };
+    _level0 = @{ @"name" : @"level_0", @"homeX" : @140, @"homeY" : @-10, @"pieceX" : @-140, @"pieceY" : @-10, @"monster": @NO};
+    _level1 = @{ @"name" : @"level_1", @"homeX" : @75, @"homeY" : @-195, @"upgrade": @YES, @"upgradeX" : @104, @"upgradeY" : @40, @"pieceX" : @-147, @"pieceY" : @295, @"monster": @NO};
+    _level2 = @{ @"name" : @"level_2", @"homeX" : @75, @"homeY" : @-195, @"upgrade": @YES, @"upgradeX" : @40, @"upgradeY" : @288, @"pieceX" : @-40, @"pieceY" : @290, @"monster": @YES, @"monsters" : @3, @"monster0X": @1, @"monster0Y": @140, @"monster1X": @1, @"monster1Y": @4, @"monster2X": @1, @"monster2Y": @-130 };
     _levels = [[NSDictionary alloc] initWithObjectsAndKeys:_level0, @"0", _level1, @"1", _level2, @"2", nil];
     
     _level = 2;
@@ -109,8 +112,8 @@
     [self.view addConstraint:levelTop];
     [self.view addConstraint:levelBottom];
     
-    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapLevel:)];
-    [self.levelView addGestureRecognizer:tap];
+    UISwipeGestureRecognizer *swipe = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(swipeLevel:)];
+    [self.levelView addGestureRecognizer:swipe];
     
     self.levelView.userInteractionEnabled = YES;
     
@@ -125,46 +128,40 @@
     
     [self createHomeAtX:newX andY:newY];
     
-    newX = self.defaultFloatValue;
-    newY = self.defaultFloatValue;
-    
-    switch (self.level)
+    if ([self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"upgrade"]])
     {
-        case 1:
-            newX = [[self loadPiece:@"X" Piece: UPGRADE] floatValue];
-            newY = [[self loadPiece:@"Y" Piece: UPGRADE] floatValue];
-            break;
-            
-        case 2:
-            newX = [[self loadPiece:@"X" Piece: UPGRADE] floatValue];
-            newY = [[self loadPiece:@"Y" Piece: UPGRADE] floatValue];
-            break;
-    }
-    
-    if (newX != 0 || newY != 0)
-    {
+        newX = [[self loadPiece:@"X" Piece: UPGRADE] floatValue];
+        newY = [[self loadPiece:@"Y" Piece: UPGRADE] floatValue];
+        
         [self createUpgradeAtX:newX andY:newY];
     }
-    
-    newX = self.defaultFloatValue;
-    newY = self.defaultFloatValue;
     
     newX = [[self loadPiece:@"X" Piece: PIECE] floatValue];
     newY = [[self loadPiece:@"Y" Piece: PIECE] floatValue];
     
     [self createDraggablePieceAtX:newX andY:newY];
     
-    // CREATE MONSTER HERE
+    if ([self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"monster"]])
+    {
+        for (int monsters = 0; monsters < [[self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"monsters"]] intValue]; monsters++)
+        {
+            self.monsterNumber = monsters;
+            
+            newX = [[self loadPiece:@"X" Piece: MONSTER] floatValue];
+            newY = [[self loadPiece:@"Y" Piece: MONSTER] floatValue];
+            
+            //[self createMonsterAtX:newX andY:newY andMonster: (1 + arc4random() % (3 - 1+1))];
+            
+            [self createMonsterAtX:newX andY:newY andMonster: monsters];
+            
+            [self.monster setTag: monsters + 100];
+        }
+    }
 }
 
 - (void) setDefaultTimer
 {
     self.totalSecconds = 0;
-}
-
-- (CGFloat) defaultFloatValue
-{
-    return 0;
 }
 
 - (void) createHomeAtX : (CGFloat) X andY: (CGFloat) Y
@@ -256,8 +253,9 @@
     [self.view addConstraint:pieceX];
     [self.view addConstraint:pieceY];
     
-    UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panPiece:)];
-    [self.draggablePiece addGestureRecognizer:pan];
+    self.pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panPiece:)];
+    
+    [self.draggablePiece addGestureRecognizer:self.pan];
     
     switch (self.level)
     {
@@ -269,25 +267,108 @@
     self.draggablePiece.userInteractionEnabled = YES;
 }
 
-- (void) createMonsterAtX: (CGFloat) X andY: (CGFloat) Y andMonster: (int) MONSTER
+- (void) createMonsterAtX: (CGFloat) X andY: (CGFloat) Y andMonster: (int) monsterType
 {
-    switch (MONSTER)
+    switch (monsterType)
     {
         case EASY_MONSTER:
         {
+            self.monster = [[UIImageView alloc] init];
+            self.monster.translatesAutoresizingMaskIntoConstraints = NO;
+            self.monster.contentMode = UIViewContentModeScaleAspectFit;
+            self.monster.image = [UIImage imageNamed:@"monster0"];
+            
+            [self.view addSubview:self.monster];
+            
+            NSLayoutConstraint *pieceX = [NSLayoutConstraint constraintWithItem:self.monster
+                                                                      attribute:NSLayoutAttributeCenterX
+                                                                      relatedBy:NSLayoutRelationEqual
+                                                                         toItem:self.view
+                                                                      attribute:NSLayoutAttributeCenterX
+                                                                     multiplier:1.0
+                                                                       constant:X];
+            
+            NSLayoutConstraint *pieceY = [NSLayoutConstraint constraintWithItem:self.monster
+                                                                      attribute:NSLayoutAttributeCenterY
+                                                                      relatedBy:NSLayoutRelationEqual
+                                                                         toItem:self.view
+                                                                      attribute:NSLayoutAttributeCenterY
+                                                                     multiplier:1.0
+                                                                       constant:Y];
+            
+            
+            [self.view addConstraint:pieceX];
+            [self.view addConstraint:pieceY];
+            
             break;
         }
             
         case MEDIUM_MONSTER:
         {
+            self.monster = [[UIImageView alloc] init];
+            self.monster.translatesAutoresizingMaskIntoConstraints = NO;
+            self.monster.contentMode = UIViewContentModeScaleAspectFit;
+            self.monster.image = [UIImage imageNamed:@"monster1"];
+            
+            [self.view addSubview:self.monster];
+            
+            NSLayoutConstraint *pieceX = [NSLayoutConstraint constraintWithItem:self.monster
+                                                                      attribute:NSLayoutAttributeCenterX
+                                                                      relatedBy:NSLayoutRelationEqual
+                                                                         toItem:self.view
+                                                                      attribute:NSLayoutAttributeCenterX
+                                                                     multiplier:1.0
+                                                                       constant:X];
+            
+            NSLayoutConstraint *pieceY = [NSLayoutConstraint constraintWithItem:self.monster
+                                                                      attribute:NSLayoutAttributeCenterY
+                                                                      relatedBy:NSLayoutRelationEqual
+                                                                         toItem:self.view
+                                                                      attribute:NSLayoutAttributeCenterY
+                                                                     multiplier:1.0
+                                                                       constant:Y];
+            
+            
+            [self.view addConstraint:pieceX];
+            [self.view addConstraint:pieceY];
+            
             break;
         }
             
         case HARD_MONSTER:
         {
+            self.monster = [[UIImageView alloc] init];
+            self.monster.translatesAutoresizingMaskIntoConstraints = NO;
+            self.monster.contentMode = UIViewContentModeScaleAspectFit;
+            self.monster.image = [UIImage imageNamed:@"monster2"];
+            
+            [self.view addSubview:self.monster];
+            
+            NSLayoutConstraint *pieceX = [NSLayoutConstraint constraintWithItem:self.monster
+                                                                      attribute:NSLayoutAttributeCenterX
+                                                                      relatedBy:NSLayoutRelationEqual
+                                                                         toItem:self.view
+                                                                      attribute:NSLayoutAttributeCenterX
+                                                                     multiplier:1.0
+                                                                       constant:X];
+            
+            NSLayoutConstraint *pieceY = [NSLayoutConstraint constraintWithItem:self.monster
+                                                                      attribute:NSLayoutAttributeCenterY
+                                                                      relatedBy:NSLayoutRelationEqual
+                                                                         toItem:self.view
+                                                                      attribute:NSLayoutAttributeCenterY
+                                                                     multiplier:1.0
+                                                                       constant:Y];
+            
+            
+            [self.view addConstraint:pieceX];
+            [self.view addConstraint:pieceY];
+            
             break;
         }
     }
+    
+    [self.view bringSubviewToFront:self.monster];
 }
 
 - (NSNumber *) loadPiece : (NSString *) XY Piece: (int) piece
@@ -309,6 +390,10 @@
             case PIECE:
                 coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"pieceX"]];
                 break;
+                
+            case MONSTER:
+                coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, [NSString stringWithFormat:@"monster%dX", self.monsterNumber]]];
+                break;
         }
     }
     else
@@ -326,6 +411,10 @@
             case PIECE:
                 coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"pieceY"]];
                 break;
+                
+            case MONSTER:
+                coordinate = [self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, [NSString stringWithFormat:@"monster%dY", self.monsterNumber]]];
+                break;
         }
     }
     
@@ -337,7 +426,7 @@
     [super didReceiveMemoryWarning];
 }
 
-- (void) tapLevel : (UITapGestureRecognizer *) tap
+- (void) swipeLevel : (UISwipeGestureRecognizer *) swipe
 {
     if (self.totalSecconds != 0)
     {
@@ -413,6 +502,8 @@
         [self checkHomeBoundaries: pan];
         
         [self checkUpgradeBoundaries: pan];
+        
+        [self checkMonsterBoundaries: pan];
     }
 }
 
@@ -640,6 +731,34 @@
             break;
         }
     }
+}
+
+- (void) checkMonsterBoundaries : (UIPanGestureRecognizer *) pan
+{
+    for (int monsters = 0; monsters < [[self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"monsters"]] intValue]; monsters++)
+    {
+        self.monster = [self.view viewWithTag:monsters + 100];
+        
+        if (CGRectIntersectsRect(self.draggablePiece.frame, self.monster.frame))
+        {
+            [self pieceDeath];
+        }
+    }
+}
+
+- (void) tapEasyMonster : (UITapGestureRecognizer *) tap
+{
+    
+}
+
+- (void) tapMediumMonster : (UITapGestureRecognizer *) tap
+{
+    
+}
+
+- (void) tapHardMonster : (UITapGestureRecognizer *) tap
+{
+    
 }
 
 - (IBAction)resumeGame:(UIButton *)sender
