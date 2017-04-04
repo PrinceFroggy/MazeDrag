@@ -10,8 +10,18 @@
 
 @interface GameController ()
 @property (nonatomic) UIImageView *levelView;
+@property (weak, nonatomic) IBOutlet UIView *menuView;
+
+@property (nonatomic,strong) NSTimer *timer;
+@property (weak, nonatomic) IBOutlet UILabel *timerLabel;
+@property __block long totalSecconds;
+@property __block long pausedSeconds;
+
 @property (nonatomic) UIImageView *home;
 @property (nonatomic) UIImageView *upgrade;
+@property (nonatomic) UIImageView *easyMonster;
+@property (nonatomic) UIImageView *mediumMonster;
+@property (nonatomic) UIImageView *hardMonster;
 @property (nonatomic) UIImageView *draggablePiece;
 
 @property NSDictionary *level0;
@@ -21,6 +31,7 @@
 @property NSDictionary *levels;
 
 @property int level;
+@property BOOL timerFlag;
 @property BOOL animationFlag;
 
 // MAP IS RENDERING PIECE LAST TO BE ABOVE REST OF ASSETS
@@ -28,6 +39,10 @@
 #define HOME 0
 #define UPGRADE 1
 #define PIECE 2
+
+#define EASY_MONSTER 0
+#define MEDIUM_MONSTER 1
+#define HARD_MONSTER 2
 
 @property UIAlertController *alertController;
 @end
@@ -40,19 +55,16 @@
     
     _level0 = @{ @"name" : @"level_0", @"homeX" : @140, @"homeY" : @-10, @"pieceX" : @-140, @"pieceY" : @-10};
     _level1 = @{ @"name" : @"level_1", @"homeX" : @75, @"homeY" : @-195, @"upgradeX" : @104, @"upgradeY" : @40, @"pieceX" : @-147, @"pieceY" : @295};
+    _level2 = @{ @"name" : @"level_2", @"homeX" : @75, @"homeY" : @-195, @"upgradeX" : @40, @"upgradeY" : @288, @"pieceX" : @-40, @"pieceY" : @290, @"monsters" : @3, @"monsterX": , };
     _levels = [[NSDictionary alloc] initWithObjectsAndKeys:_level0, @"0", _level1, @"1", _level2, @"2", nil];
     
-    _level = 0;
+    _level = 2;
     
     [self createLevel: _level];
-    
-    [NSTimer scheduledTimerWithTimeInterval:60 target:self selector:@selector(pieceDeath) userInfo:nil repeats:YES];
-    
 }
 
 - (void) createLevel : (int) level
 {
-    
     self.levelView = [[UIImageView alloc] initWithFrame:CGRectZero];
     self.levelView.translatesAutoresizingMaskIntoConstraints = NO;
     
@@ -97,6 +109,14 @@
     [self.view addConstraint:levelTop];
     [self.view addConstraint:levelBottom];
     
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapLevel:)];
+    [self.levelView addGestureRecognizer:tap];
+    
+    self.levelView.userInteractionEnabled = YES;
+    
+    [self.view bringSubviewToFront:self.menuView];
+    [self.view bringSubviewToFront:self.timerLabel];
+    
     CGFloat newX;
     CGFloat newY;
     
@@ -114,6 +134,11 @@
             newX = [[self loadPiece:@"X" Piece: UPGRADE] floatValue];
             newY = [[self loadPiece:@"Y" Piece: UPGRADE] floatValue];
             break;
+            
+        case 2:
+            newX = [[self loadPiece:@"X" Piece: UPGRADE] floatValue];
+            newY = [[self loadPiece:@"Y" Piece: UPGRADE] floatValue];
+            break;
     }
     
     if (newX != 0 || newY != 0)
@@ -128,6 +153,13 @@
     newY = [[self loadPiece:@"Y" Piece: PIECE] floatValue];
     
     [self createDraggablePieceAtX:newX andY:newY];
+    
+    // CREATE MONSTER HERE
+}
+
+- (void) setDefaultTimer
+{
+    self.totalSecconds = 0;
 }
 
 - (CGFloat) defaultFloatValue
@@ -227,7 +259,35 @@
     UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panPiece:)];
     [self.draggablePiece addGestureRecognizer:pan];
     
+    switch (self.level)
+    {
+        case 2:
+            [self addTapGesture];
+            break;
+    }
+    
     self.draggablePiece.userInteractionEnabled = YES;
+}
+
+- (void) createMonsterAtX: (CGFloat) X andY: (CGFloat) Y andMonster: (int) MONSTER
+{
+    switch (MONSTER)
+    {
+        case EASY_MONSTER:
+        {
+            break;
+        }
+            
+        case MEDIUM_MONSTER:
+        {
+            break;
+        }
+            
+        case HARD_MONSTER:
+        {
+            break;
+        }
+    }
 }
 
 - (NSNumber *) loadPiece : (NSString *) XY Piece: (int) piece
@@ -277,6 +337,26 @@
     [super didReceiveMemoryWarning];
 }
 
+- (void) tapLevel : (UITapGestureRecognizer *) tap
+{
+    if (self.totalSecconds != 0)
+    {
+        self.pausedSeconds = self.totalSecconds;
+    
+        [self.timer invalidate];
+    }
+    
+    [self.menuView setHidden: NO];
+    [self.view bringSubviewToFront:self.menuView];
+}
+
+- (void) addTapGesture
+{
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapPiece:)];
+    tap.numberOfTapsRequired = 1;
+    [self.draggablePiece addGestureRecognizer:tap];
+}
+
 - (void) tapPiece : (UITapGestureRecognizer *) tap
 {
     CGRect rect = [self.draggablePiece frame];
@@ -297,6 +377,30 @@
 
 - (void) panPiece : (UIPanGestureRecognizer *) pan
 {
+    if (!self.timerFlag)
+    {
+        self.totalSecconds = 61;
+        
+        self.timer = [NSTimer
+                      scheduledTimerWithTimeInterval:1
+                      repeats:YES
+                      block:^(NSTimer * _Nonnull timer)
+                      {
+                          self.totalSecconds--;
+                          long minutes = self.totalSecconds / 60;
+                          int seconds = self.totalSecconds % 60;
+                          
+                          self.timerLabel.text = [NSString stringWithFormat:@"%ld:%02d", minutes, seconds];
+                          
+                          if (self.totalSecconds == 0)
+                          {
+                              [self pieceDeath];
+                          }
+                      }];
+        
+        _timerFlag = YES;
+    }
+    
     if (!self.animationFlag)
     {
         if (pan.state == UIGestureRecognizerStateChanged)
@@ -327,6 +431,8 @@
     {
         self.animationFlag = YES;
         
+        [self.timer invalidate];
+        
         [UIImageView animateWithDuration:2.0 animations:^(void)
          {
              self.draggablePiece.alpha = 0.0;
@@ -335,6 +441,9 @@
          {
              [self.draggablePiece removeFromSuperview];
              
+             [self setDefaultTimer];
+             self.timerLabel.text = @"";
+
              [self regenerateUpgrade];
              
              CGFloat newX;
@@ -345,6 +454,7 @@
              
              [self createDraggablePieceAtX:newX andY:newY];
              
+             self.timerFlag = NO;
              self.animationFlag = NO;
          }];
     }
@@ -411,6 +521,8 @@
                 {
                     self.animationFlag = YES;
                     
+                    [self.timer invalidate];
+                    
                     [UIImageView animateWithDuration:2.0 animations:^(void)
                      {
                          self.draggablePiece.alpha = 0.0;
@@ -418,6 +530,9 @@
                                           completion:^(BOOL completion)
                      {
                          [self.draggablePiece removeFromSuperview];
+                         
+                         [self setDefaultTimer];
+                         self.timerLabel.text = @"";
                          
                          self.alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You beat level %d", self.level + 1] preferredStyle:UIAlertControllerStyleAlert];
                          
@@ -428,7 +543,8 @@
                          
                          [self presentViewController:self.alertController animated:YES completion:nil];
                          
-                         _animationFlag = NO;
+                         self.timerFlag = NO;
+                         self.animationFlag = NO;
                      }];
                 }
             }
@@ -463,18 +579,34 @@
                          }
                                               completion:^(BOOL completion)
                          {
-                             //[self.upgrade removeFromSuperview]; // teleports spider back to beginning?
+                             switch (self.level)
+                             {
+                                 case 1:
+                                 {
+                                    self.alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You unlocked the tap upgrade!"] preferredStyle:UIAlertControllerStyleAlert];
                              
-                             self.alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You unlocked the tap upgrade!"] preferredStyle:UIAlertControllerStyleAlert];
-                             
-                             [self.alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
+                                     [self.alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
                                                               {
                                                                   [self closeUpgradeView];
                                                               }]];
+                                     break;
+                                 }
+                                 
+                                 case 2:
+                                 {
+                                     self.alertController = [UIAlertController alertControllerWithTitle:@"Congratulations!" message:[NSString stringWithFormat:@"You unlocked the attack upgrade!"] preferredStyle:UIAlertControllerStyleAlert];
+                                     
+                                     [self.alertController addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action)
+                                                                      {
+                                                                          [self closeUpgradeView];
+                                                                      }]];
+                                     break;
+                                 }
+                             }
                              
                              [self presentViewController:self.alertController animated:YES completion:nil];
                              
-                             _animationFlag = NO;
+                             self.animationFlag = NO;
                          }];
                     }
                 }
@@ -492,12 +624,50 @@
 {
     [self.alertController dismissViewControllerAnimated:YES completion:nil];
     
-    if (_level > 0)
+    switch (self.level)
     {
-        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapPiece:)];
-        tap.numberOfTapsRequired = 1;
-        [self.draggablePiece addGestureRecognizer:tap];
+        case 1:
+        {
+            UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapPiece:)];
+            tap.numberOfTapsRequired = 1;
+            [self.draggablePiece addGestureRecognizer:tap];
+            break;
+        }
+            
+        case 2:
+        {
+            
+            break;
+        }
     }
+}
+
+- (IBAction)resumeGame:(UIButton *)sender
+{
+    [self.menuView setHidden:YES];
+    
+    if (_totalSecconds != 0)
+    {
+        self.totalSecconds = self.pausedSeconds;
+    
+        self.timer = [NSTimer
+                      scheduledTimerWithTimeInterval:1
+                      repeats:YES
+                      block:^(NSTimer * _Nonnull timer)
+                      {
+                          self.totalSecconds--;
+                          long minutes = self.totalSecconds / 60;
+                          int seconds = self.totalSecconds % 60;
+                      
+                          self.timerLabel.text = [NSString stringWithFormat:@"%ld:%02d", minutes, seconds];
+                      
+                          if (self.totalSecconds == 0)
+                          {
+                              [self pieceDeath];
+                          }
+                      }];
+    }
+
 }
 
 @end
