@@ -62,7 +62,7 @@
     _level3 = @{ @"name" : @"level_3", @"homeX" : @-100, @"homeY" :@-304, @"upgrade": @NO, @"pieceX" : @150, @"pieceY" : @290, @"monster": @YES, @"monsters" : @1, @"monster0" : @EASY_MONSTER, @"monster0X": @-102, @"monster0Y": @94};
     _levels = [[NSDictionary alloc] initWithObjectsAndKeys:_level0, @"0", _level1, @"1", _level2, @"2", _level3, @"3", nil];
     
-    _level = 0;
+    _level = 2;
     
     [self createLevel: _level];
 }
