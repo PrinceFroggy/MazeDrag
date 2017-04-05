@@ -684,17 +684,17 @@
 {
     if (!self.levelFlag)
     {
-        self.imageRef = [mazeImage CGImage];
+        self.imageRef = [mazeImage CGImage]; // 1ST MEMORY ISSUE
         self.width = CGImageGetWidth(self.imageRef);
         NSUInteger height = CGImageGetHeight(self.imageRef);
         CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-        self.rawData = malloc(height * self.width * 4);
+        self.rawData = malloc(height * self.width * 4); // 2ND MEMORY ISSUE
         NSUInteger bytesPerPixel = 4;
         NSUInteger bytesPerRow = bytesPerPixel * self.width;
         NSUInteger bitsPerComponent = 8;
         self.context = CGBitmapContextCreate(self.rawData, self.width, height,
                                                      bitsPerComponent, bytesPerRow, colorSpace,
-                                                     kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+                                                     kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big); // 3RD MEMORY ISSUE
         CGColorSpaceRelease(colorSpace);
         
         CGContextDrawImage(self.context, CGRectMake(0, 0, self.width, height), self.imageRef);
