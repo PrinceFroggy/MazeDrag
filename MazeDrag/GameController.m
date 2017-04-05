@@ -58,11 +58,11 @@
     
     _level0 = @{ @"name" : @"level_0", @"homeX" : @140, @"homeY" : @-10, @"pieceX" : @-140, @"pieceY" : @-10, @"monster": @NO};
     _level1 = @{ @"name" : @"level_1", @"homeX" : @75, @"homeY" : @-195, @"upgrade": @YES, @"upgradeX" : @104, @"upgradeY" : @40, @"pieceX" : @-147, @"pieceY" : @295, @"monster": @NO};
-    _level2 = @{ @"name" : @"level_2", @"homeX" : @1, @"homeY" : @-275, @"upgrade": @YES, @"upgradeX" : @40, @"upgradeY" : @288, @"pieceX" : @-40, @"pieceY" : @290, @"monster": @YES, @"monsters" : @3, @"monster0X": @1, @"monster0Y": @140, @"monster1X": @1, @"monster1Y": @4, @"monster2X": @1, @"monster2Y": @-130 };
-    _level3 = @{ @"name" : @"level_3", @"homeX" : @-100, @"homeY" :@-304, @"upgrade": @NO, @"pieceX" : @150, @"pieceY" : @290, @"monster": @YES, @"monsters" : @1, @"monster0X": @-102, @"monster0Y": @94};
+    _level2 = @{ @"name" : @"level_2", @"homeX" : @1, @"homeY" : @-275, @"upgrade": @YES, @"upgradeX" : @40, @"upgradeY" : @288, @"pieceX" : @-40, @"pieceY" : @290, @"monster": @YES, @"monsters" : @3, @"monster0" : @EASY_MONSTER, @"monster0X": @1, @"monster0Y": @140, @"monster1" : @MEDIUM_MONSTER, @"monster1X": @1, @"monster1Y": @4, @"monster2" : @HARD_MONSTER, @"monster2X": @1, @"monster2Y": @-130 };
+    _level3 = @{ @"name" : @"level_3", @"homeX" : @-100, @"homeY" :@-304, @"upgrade": @NO, @"pieceX" : @150, @"pieceY" : @290, @"monster": @YES, @"monsters" : @1, @"monster0" : @EASY_MONSTER, @"monster0X": @-102, @"monster0Y": @94};
     _levels = [[NSDictionary alloc] initWithObjectsAndKeys:_level0, @"0", _level1, @"1", _level2, @"2", _level3, @"3", nil];
     
-    _level = 3;
+    _level = 0;
     
     [self createLevel: _level];
 }
@@ -162,7 +162,7 @@
             
             // ORDERED MONSTERS
             
-            [self createMonsterAtX:newX andY:newY andMonster: monsters];
+            [self createMonsterAtX:newX andY:newY andMonster: [[self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, [NSString stringWithFormat:@"monster%d", monsters]]] intValue]];
             
             [self.monster setTag: monsters + 100];
             
@@ -287,7 +287,7 @@
             {
                 self.monster = [self.view viewWithTag:monsters + 100];
                 
-                [self addMonsterTapGesture];
+                [self addMonsterTapGesture : [[self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, [NSString stringWithFormat:@"monster%d", monsters]]] intValue]];
             }
 
             break;
@@ -489,11 +489,11 @@
     [self.draggablePiece addGestureRecognizer:tap];
 }
 
-- (void) addMonsterTapGesture
+- (void) addMonsterTapGesture : (int) monsterType
 {
     for (int monsters = 0; monsters < [[self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"monsters"]] intValue]; monsters++)
     {
-        switch (monsters)
+        switch (monsterType)
         {
             case 0:
             {
@@ -839,7 +839,7 @@
             {
                 self.monster = [self.view viewWithTag:monsters + 100];
                 
-                switch (monsters)
+                switch ([[self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, [NSString stringWithFormat:@"monster%d", monsters]]] intValue])
                 {
                     case 0:
                     {
