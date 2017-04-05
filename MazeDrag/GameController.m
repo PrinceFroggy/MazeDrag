@@ -59,15 +59,26 @@
     _level0 = @{ @"name" : @"level_0", @"homeX" : @140, @"homeY" : @-10, @"pieceX" : @-140, @"pieceY" : @-10, @"monster": @NO};
     _level1 = @{ @"name" : @"level_1", @"homeX" : @75, @"homeY" : @-195, @"upgrade": @YES, @"upgradeX" : @104, @"upgradeY" : @40, @"pieceX" : @-147, @"pieceY" : @295, @"monster": @NO};
     _level2 = @{ @"name" : @"level_2", @"homeX" : @1, @"homeY" : @-275, @"upgrade": @YES, @"upgradeX" : @40, @"upgradeY" : @288, @"pieceX" : @-40, @"pieceY" : @290, @"monster": @YES, @"monsters" : @3, @"monster0X": @1, @"monster0Y": @140, @"monster1X": @1, @"monster1Y": @4, @"monster2X": @1, @"monster2Y": @-130 };
-    _levels = [[NSDictionary alloc] initWithObjectsAndKeys:_level0, @"0", _level1, @"1", _level2, @"2", nil];
+    _level3 = @{ @"name" : @"level_3", @"homeX" : @-100, @"homeY" :@-304, @"upgrade": @NO, @"pieceX" : @150, @"pieceY" : @290, @"monster": @YES, @"monsters" : @1, @"monster0X": @-102, @"monster0Y": @94};
+    _levels = [[NSDictionary alloc] initWithObjectsAndKeys:_level0, @"0", _level1, @"1", _level2, @"2", _level3, @"3", nil];
     
-    _level = 2;
+    _level = 3;
     
     [self createLevel: _level];
 }
 
 - (void) createLevel : (int) level
 {
+    for (int i = 0; i < 3; i ++)
+    {
+        if ([self.view.subviews containsObject:[self.view viewWithTag:i + 100]])
+        {
+            self.monster = [self.view viewWithTag:i + 100];
+            
+            [self.monster removeFromSuperview];
+        }
+    }
+    
     self.levelView = [[UIImageView alloc] initWithFrame:CGRectZero];
     self.levelView.translatesAutoresizingMaskIntoConstraints = NO;
     
@@ -128,7 +139,7 @@
     
     [self createHomeAtX:newX andY:newY];
     
-    if ([self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"upgrade"]])
+    if ([[self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"upgrade"]] isEqual:@YES])
     {
         newX = [[self loadPiece:@"X" Piece: UPGRADE] floatValue];
         newY = [[self loadPiece:@"Y" Piece: UPGRADE] floatValue];
@@ -136,7 +147,7 @@
         [self createUpgradeAtX:newX andY:newY];
     }
     
-    if ([self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"monster"]])
+    if ([[self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"monster"]] isEqual:@YES])
     {
         for (int monsters = 0; monsters < [[self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"monsters"]] intValue]; monsters++)
         {
@@ -154,6 +165,8 @@
             [self createMonsterAtX:newX andY:newY andMonster: monsters];
             
             [self.monster setTag: monsters + 100];
+            
+            self.monster = [self.view viewWithTag:monsters + 100];
         }
     }
     
@@ -264,10 +277,19 @@
     switch (self.level)
     {
         case 2:
-            [self addTapGesture];
+            [self addPieceTapGesture];
             break;
             
         case 3:
+            [self addPieceTapGesture];
+            
+            for (int monsters = 0; monsters < [[self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"monsters"]] intValue]; monsters++)
+            {
+                self.monster = [self.view viewWithTag:monsters + 100];
+                
+                [self addMonsterTapGesture];
+            }
+
             break;
     }
     
@@ -460,11 +482,47 @@
     [self.view bringSubviewToFront:self.menuView];
 }
 
-- (void) addTapGesture
+- (void) addPieceTapGesture
 {
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapPiece:)];
     tap.numberOfTapsRequired = 1;
     [self.draggablePiece addGestureRecognizer:tap];
+}
+
+- (void) addMonsterTapGesture
+{
+    for (int monsters = 0; monsters < [[self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"monsters"]] intValue]; monsters++)
+    {
+        switch (monsters)
+        {
+            case 0:
+            {
+                UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapEasyMonster:)];
+                tap.numberOfTapsRequired = 1;
+                [self.monster addGestureRecognizer:tap];
+                break;
+            }
+                
+            case 1:
+            {
+                UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapMediumMonster:)];
+                tap.numberOfTapsRequired = 1;
+                [self.monster addGestureRecognizer:tap];
+                break;
+            }
+                
+            case 2:
+            {
+                UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapHardMonster:)];
+                tap.numberOfTapsRequired = 1;
+                [self.monster addGestureRecognizer:tap];
+                break;
+            }
+        }
+        
+        self.monster.userInteractionEnabled = YES;
+    }
+
 }
 
 - (void) tapPiece : (UITapGestureRecognizer *) tap
@@ -567,12 +625,9 @@
                  {
                      self.monster = [self.view viewWithTag:monsters + 100];
                      
-                     if (self.level == 2)
+                     for (UIGestureRecognizer *gr in self.monster.gestureRecognizers)
                      {
-                         for (UIGestureRecognizer *gr in self.monster.gestureRecognizers)
-                         {
-                             [self.monster removeGestureRecognizer:gr];
-                         }
+                         [self.monster removeGestureRecognizer:gr];
                      }
                      
                      [self regenerateMonster:self.monster];
@@ -847,13 +902,13 @@
             {
                 self.monsterTaps++;
                 
-                [UIImageView animateWithDuration:1.0 animations:^(void)
+                [UIImageView animateWithDuration:0.5 animations:^(void)
                  {
                      self.draggablePiece.frame = CGRectMake(tap.view.frame.origin.x, tap.view.frame.origin.y, self.draggablePiece.frame.size.width, self.draggablePiece.frame.size.height );
                  }
                                       completion:^(BOOL completion)
                  {
-                     [UIImageView animateWithDuration:1.0 animations:^(void)
+                     [UIImageView animateWithDuration:0.5 animations:^(void)
                       {
                           self.draggablePiece.frame = CGRectMake(previousX, previousY, self.draggablePiece.frame.size.width, self.draggablePiece.frame.size.height );
                       }
@@ -890,13 +945,13 @@
             {
                 self.monsterTaps++;
                 
-                [UIImageView animateWithDuration:1.0 animations:^(void)
+                [UIImageView animateWithDuration:0.5 animations:^(void)
                  {
                      self.draggablePiece.frame = CGRectMake(tap.view.frame.origin.x, tap.view.frame.origin.y, self.draggablePiece.frame.size.width, self.draggablePiece.frame.size.height );
                  }
                                       completion:^(BOOL completion)
                  {
-                     [UIImageView animateWithDuration:1.0 animations:^(void)
+                     [UIImageView animateWithDuration:0.5 animations:^(void)
                       {
                           self.draggablePiece.frame = CGRectMake(previousX, previousY, self.draggablePiece.frame.size.width, self.draggablePiece.frame.size.height );
                       }
@@ -934,13 +989,13 @@
             {
                 self.monsterTaps++;
                 
-                [UIImageView animateWithDuration:1.0 animations:^(void)
+                [UIImageView animateWithDuration:0.5 animations:^(void)
                  {
                      self.draggablePiece.frame = CGRectMake(tap.view.frame.origin.x, tap.view.frame.origin.y, self.draggablePiece.frame.size.width, self.draggablePiece.frame.size.height );
                  }
                                       completion:^(BOOL completion)
                  {
-                     [UIImageView animateWithDuration:1.0 animations:^(void)
+                     [UIImageView animateWithDuration:0.5 animations:^(void)
                       {
                           self.draggablePiece.frame = CGRectMake(previousX, previousY, self.draggablePiece.frame.size.width, self.draggablePiece.frame.size.height );
                       }
