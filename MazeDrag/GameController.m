@@ -33,6 +33,7 @@
 @property NSDictionary *levels;
 
 @property int level;
+@property BOOL levelFlag;
 @property BOOL timerFlag;
 @property BOOL animationFlag;
 
@@ -48,6 +49,14 @@
 #define HARD_MONSTER 2
 
 @property UIAlertController *alertController;
+
+// MEMORY ISSUE VIA PHONE
+
+@property CGImageRef imageRef;
+@property NSUInteger width;
+@property unsigned char *rawData;
+@property CGContextRef context;
+
 @end
 
 @implementation GameController
@@ -62,14 +71,17 @@
     _level3 = @{ @"name" : @"level_3", @"homeX" : @-100, @"homeY" :@-304, @"upgrade": @NO, @"pieceX" : @150, @"pieceY" : @290, @"monster": @YES, @"monsters" : @1, @"monster0" : @EASY_MONSTER, @"monster0X": @-102, @"monster0Y": @94};
     _levels = [[NSDictionary alloc] initWithObjectsAndKeys:_level0, @"0", _level1, @"1", _level2, @"2", _level3, @"3", nil];
     
-    _level = 2;
+    _level = 0;
     
     [self createLevel: _level];
 }
 
 - (void) createLevel : (int) level
 {
-    for (int i = 0; i < 3; i ++)
+    // MEMORY
+    self.levelFlag = NO;
+    
+    for (int i = 0; i < 3; i ++) // CHANGE 3
     {
         if ([self.view.subviews containsObject:[self.view viewWithTag:i + 100]])
         {
@@ -670,25 +682,30 @@
 
 - (UIColor *)pixelColorInImage: (UIImage*) mazeImage atX:(int)x atY:(int)y
 {
-    CGImageRef imageRef = [mazeImage CGImage];
-    NSUInteger width = CGImageGetWidth(imageRef);
-    NSUInteger height = CGImageGetHeight(imageRef);
-    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-    unsigned char *rawData = malloc(height * width * 4);
-    NSUInteger bytesPerPixel = 4;
-    NSUInteger bytesPerRow = bytesPerPixel * width;
-    NSUInteger bitsPerComponent = 8;
-    CGContextRef context = CGBitmapContextCreate(rawData, width, height,
-                                                 bitsPerComponent, bytesPerRow, colorSpace,
-                                                 kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
-    CGColorSpaceRelease(colorSpace);
+    if (!self.levelFlag)
+    {
+        self.imageRef = [mazeImage CGImage];
+        self.width = CGImageGetWidth(self.imageRef);
+        NSUInteger height = CGImageGetHeight(self.imageRef);
+        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+        self.rawData = malloc(height * self.width * 4);
+        NSUInteger bytesPerPixel = 4;
+        NSUInteger bytesPerRow = bytesPerPixel * self.width;
+        NSUInteger bitsPerComponent = 8;
+        self.context = CGBitmapContextCreate(self.rawData, self.width, height,
+                                                     bitsPerComponent, bytesPerRow, colorSpace,
+                                                     kCGImageAlphaPremultipliedLast | kCGBitmapByteOrder32Big);
+        CGColorSpaceRelease(colorSpace);
+        
+        CGContextDrawImage(self.context, CGRectMake(0, 0, self.width, height), self.imageRef);
+        CGContextRelease(self.context);
+        
+        self.levelFlag = YES;
+    }
     
-    CGContextDrawImage(context, CGRectMake(0, 0, width, height), imageRef);
-    CGContextRelease(context);
+    int index = 4 * ( (self.width * round(y) ) + round(x) );
     
-    int index = 4 * ( (width * round(y) ) + round(x) );
-    
-    int R = rawData[index];
+    int R = self.rawData[index];
     
     UIColor *boundaries;
     
