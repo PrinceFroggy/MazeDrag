@@ -65,13 +65,13 @@
 {
     [super viewDidLoad];
     
-    _level0 = @{ @"name" : @"level_0", @"homeX" : @140, @"homeY" : @-10, @"pieceX" : @-140, @"pieceY" : @-10, @"monster": @NO};
+    _level0 = @{ @"name" : @"level_0", @"homeX" : @140, @"homeY" : @-10, @"upgrade": @NO, @"pieceX" : @-140, @"pieceY" : @-10, @"monster": @NO};
     _level1 = @{ @"name" : @"level_1", @"homeX" : @75, @"homeY" : @-195, @"upgrade": @YES, @"upgradeX" : @104, @"upgradeY" : @40, @"pieceX" : @-147, @"pieceY" : @295, @"monster": @NO};
     _level2 = @{ @"name" : @"level_2", @"homeX" : @1, @"homeY" : @-275, @"upgrade": @YES, @"upgradeX" : @40, @"upgradeY" : @288, @"pieceX" : @-40, @"pieceY" : @290, @"monster": @YES, @"monsters" : @3, @"monster0" : @EASY_MONSTER, @"monster0X": @1, @"monster0Y": @140, @"monster1" : @MEDIUM_MONSTER, @"monster1X": @1, @"monster1Y": @4, @"monster2" : @HARD_MONSTER, @"monster2X": @1, @"monster2Y": @-130 };
-    _level3 = @{ @"name" : @"level_3", @"homeX" : @-100, @"homeY" :@-304, @"upgrade": @NO, @"pieceX" : @150, @"pieceY" : @290, @"monster": @YES, @"monsters" : @1, @"monster0" : @EASY_MONSTER, @"monster0X": @-102, @"monster0Y": @94};
+    _level3 = @{ @"name" : @"level_3", @"homeX" : @-100, @"homeY" :@-304, @"upgrade": @NO, @"pieceX" : @150, @"pieceY" : @290, @"monster": @YES, @"monsters" : @2, @"monster0" : @EASY_MONSTER, @"monster0X": @-102, @"monster0Y": @94, @"monster1" : @HARD_MONSTER, @"monster1X" : @9, @"monster1Y" : @-270};
     _levels = [[NSDictionary alloc] initWithObjectsAndKeys:_level0, @"0", _level1, @"1", _level2, @"2", _level3, @"3", nil];
     
-    _level = 0;
+    _level = 3;
     
     [self createLevel: _level];
 }
@@ -81,13 +81,16 @@
     // MEMORY
     self.levelFlag = NO;
     
-    for (int i = 0; i < 3; i ++) // CHANGE 3
+    if ([[self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level, @"monster"]] isEqual:@YES])
     {
-        if ([self.view.subviews containsObject:[self.view viewWithTag:i + 100]])
+        for (int i = 0; i < [[self.levels valueForKeyPath: [NSString stringWithFormat:@"%d.%@", self.level - 1, @"monsters"]] intValue]; i ++)
         {
-            self.monster = [self.view viewWithTag:i + 100];
-            
-            [self.monster removeFromSuperview];
+            if ([self.view.subviews containsObject:[self.view viewWithTag:i + 100]])
+            {
+                self.monster = [self.view viewWithTag:i + 100];
+                
+                [self.monster removeFromSuperview];
+            }
         }
     }
     
@@ -771,6 +774,12 @@
 - (void) closeCongratulationsView
 {
     [self.alertController dismissViewControllerAnimated:YES completion:nil];
+    
+    if (self.level == 3) // TEMPORARY FOR PRESENTATION CLOSE TO MAIN MENU
+    {
+        [self dismissViewControllerAnimated:YES completion:nil];
+    }
+    
     self.level++;
     [self createLevel: self.level];
 }
